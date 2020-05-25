@@ -7,7 +7,7 @@ class Bot(Player):
     @classmethod
     def generate_idBot(cls):
         Bot.__idBot += 1
-        return Bot.__id
+        return Bot.__idBot
 
     def __init__(self):
         self.__idBot = Bot.generate_idBot()

@@ -41,11 +41,9 @@ class Player(object):
     def nCards(self):
         return len(self.__hand) + len(self.__move)
 
-    @role.setter
-    def role(self, role):
+    def setRole(self, role):
         self.__role = role
 
-    @hand.setter
     def setHand(self, hand):
         self.__hand = hand
         self.sortHand()
@@ -58,6 +56,11 @@ class Player(object):
         ret = f"--- {self.__name}'s hand ---\n"
         for i in range(len(self.__hand)):
             ret += f"{i+1}. {str(self.__hand[i])}\n"
+        print(ret)
+
+    def addCardHand(self, card):
+        self.hand.append(card)
+        self.sortHand()
 
     # Adds a card from the players hand to their move cards
     def addCardMove(self, i):

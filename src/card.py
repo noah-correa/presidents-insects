@@ -16,21 +16,16 @@ class Card(object):
 
     def __lt__(self, other):
         return self.__rank < other.__rank
-    
-    def __le__(self, other):
-        return self.__rank <= other.__rank
 
     def __eq__(self, other):
-        return self.__rank == other.__rank
+        return ((self.__suit == other.suit) and (self.value == other.value))
 
     def __ne__(self, other):
-        return self.__rank != other.__rank
+        return not(self.__eq__(other))
 
     def __gt__(self, other):
         return self.__rank > other.__rank
 
-    def __ge__(self, other):
-        return self.__rank >= other.__rank
 
     @property
     def rank(self):

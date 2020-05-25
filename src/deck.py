@@ -57,10 +57,14 @@ class Deck(object):
     # Deal a hand of n cards from deck
     def deal(self, n):
         remaining_cards = [card for card in self.__deck if card not in self.__dealt]
+        print(len(remaining_cards))
         hand_index = random.sample(range(len(remaining_cards)-1), n)
         hand = []
         for i in hand_index:
             hand.append(remaining_cards[i])
             self.__dealt.append(remaining_cards[i])
         return hand
+
+    def spareCards(self):
+        return [card for card in self.__deck if card not in self.__dealt]
 
