@@ -99,12 +99,12 @@ class Player(object):
         self.__hand.pop(-2)
         return ret
 
+    # Updates player attributes if triple six is in move
     def tripleSix(self):
         if self.__isTripleSix(self.__move) is True:
             self.__moveRank = 62
 
-
-    # Helper function to determinr if cards in given list is triple sixes
+    # Helper function to determine if cards in given list is triple sixes
     def __isTripleSix(self, cards):
         if len(cards) == 3:
             for card in cards:
@@ -113,9 +113,4 @@ class Player(object):
                 else:
                     return False
             return True
-
-    
-player = Player("Noah")
-
-
 
