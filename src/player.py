@@ -46,7 +46,7 @@ class Player(object):
         self.__role = role
 
     @hand.setter
-    def hand(self, hand):
+    def setHand(self, hand):
         self.__hand = hand
         self.sortHand()
 
