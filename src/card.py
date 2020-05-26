@@ -38,7 +38,8 @@ class Card(object):
     def suit(self):
         return self.__suit
 
-    def isKingHearts(self):
+    @property
+    def kingHearts(self):
         return self.__kingHearts
 
 

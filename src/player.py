@@ -1,4 +1,4 @@
-
+from move import Move
 
 class Player(object):
 
@@ -16,6 +16,7 @@ class Player(object):
         self.__hand = []
         self.__move = []
         self.__moveRank = 0
+        self.__passed = 0
 
     def __str__(self):
         return f"Player: {self.name}, ID: {self.id}, Role: {self.role}."
@@ -47,6 +48,13 @@ class Player(object):
     @property
     def moveRank(self):
         return self.__moveRank
+
+    @property
+    def passed(self):
+        return self.__passed
+
+    def resetPassed(self):
+        self.__passed = 0
 
     def setRole(self, role):
         self.__role = role
@@ -86,29 +94,48 @@ class Player(object):
 
     # Commits the card(s) in players move to the pile
     def playTurn(self):
-        ret = self.move
+        ret = Move(self.id, self.move, self.moveRank)
         self.move = []
+        self.moveRank = 0
         return ret
 
     # Player passes turn, if any cards were in move, they are added back to hand
     def passTurn(self):
-        self.hand.extend(self.move)
+        self.__passed = 1
+        self.__hand.extend(self.move)
         self.sortHand()
         return []
 
+    # Returns objectively lowest card in player's hand
+    def lowOne(self):
+        ret = self.hand[0]
+        self.hand.pop(0)
+        return ret
+
     # Returns objectively lowest 2 cards in player's hand
     def lowTwo(self):
-        ret = self.hand[:2]
-        self.hand.pop(0)
-        self.hand.pop(1)
+        ret = []
+        ret.append(self.lowOne())
+        ret.append(self.lowOne())
+        return ret
+
+    # Returns objectively highest card in player's hand
+    def highOne(self):
+        ret = self.hand[-1]
+        self.hand.pop(-1)
         return ret
 
     # Returns objectively highest 2 cards in player's hand
     def highTwo(self):
-        ret = self.hand[-2:]
-        self.hand.pop(-1)
-        self.hand.pop(-2)
+        ret = []
+        ret.append(self.highOne())
+        ret.append(self.highOne())
         return ret
+
+    # Adds two cards to players hand
+    def addTwo(self, cards):
+        for card in cards:
+            self.addCardHand(card)
 
     # Updates player attributes if triple six is in move
     def tripleSix(self):
