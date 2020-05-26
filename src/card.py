@@ -9,7 +9,7 @@ class Card(object):
         self.__kingHearts = kingHearts
 
     def __repr__(self):
-        return f"<{self.__value} of {self.__suit}, rank = {self.__rank}>"
+        return f"<{self.__value} of {self.__suit} ({self.__rank})>"
 
     def __str__(self):
         return f"{self.__value} of {self.__suit}."
@@ -25,7 +25,6 @@ class Card(object):
 
     def __gt__(self, other):
         return self.__rank > other.__rank
-
 
     @property
     def rank(self):

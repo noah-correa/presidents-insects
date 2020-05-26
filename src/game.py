@@ -1,5 +1,4 @@
 from deck import Deck
-from card import *
 from player import *
 from bot import Bot
 
@@ -18,6 +17,10 @@ class Game(object):
         self.__roles = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
         self.__nHand = 52//total
         self.__nSpare = 52%total
+        self.__winners = []
+        self.__roundNumber = 0
+        self.__turnNumber = 0
+        self.__currPlayer = -1
 
     @property
     def deck(self):
@@ -74,56 +77,51 @@ class Game(object):
 
     # Deals hand to all players
     def dealHands(self):
-        print(self.roles)
-        print(self.players)
         for i in range(self.nTotal):
             self.players[i+1].setHand(self.deck.deal(self.nHand))
-            print(f"DEALT ID: {i+1}")
-        for i in range(self.nSpare):
-            spares = sample(self.deck.spareCards(), len(self.deck.spareCards()))
-            if len(spares) != self.nSpare:
-                raise Exception("Too many spare cards in deck")
+        
+        spares = sample(self.deck.spareCards(), len(self.deck.spareCards()))
+        if len(spares) != self.nSpare:
+            raise Exception("Too many spare cards in deck")
+        else:
+            if len(self.roles[ROLES[2]]) >= self.nSpare:
+                citizens = sample(self.roles[ROLES[2]], self.nSpare)
+                for i in range(len(citizens)):
+                    self.players[citizens[i]].addCardHand(spares[i])
             else:
-                if len(self.roles[ROLES[2]]) >= self.nSpare:
-                    citizens = sample(self.roles[ROLES[2]], self.nSpare)
-                    print(f"CITIZENS: {len(citizens)}")
-                    for i in range(len(citizens)):
-                        self.players[citizens[i]].addCardHand(spares[i])
-                else:
-                    citizens = sample(self.roles[ROLES[2]], len(self.roles[ROLES[2]]))
-                    for i in range(len(citizens)):
-                        self.players[citizens[i]].addCardHand(spares[i])
-                    remaining = spares[len(citizens):]
-                    for i in range(len(remaining)):
-                        self.players[self.roles[ROLES[i+3]]].addCardHand(remaining[i])
-                        if i == 2:
-                            self.players[self.roles[ROLES[1]]].addCardHand(remaining[i])
+                citizens = sample(self.roles[ROLES[2]], len(self.roles[ROLES[2]]))
+                for i in range(len(citizens)):
+                    self.players[citizens[i]].addCardHand(spares[i])
+                remaining = spares[len(citizens):]
+                for i in range(len(remaining)):
+                    self.players[self.roles[ROLES[i+3]]].addCardHand(remaining[i])
+                    if i == 2:
+                        self.players[self.roles[ROLES[1]]].addCardHand(remaining[i])
 
-
-                       
-
-                        
-
-
+    # Updates roles dict in game class
     def updateRoles(self):
-        self.__clearRoles()
+        self.__roles = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
         for id in self.players:
             if self.players[id].role == ROLES[2]:
                 self.roles[self.players[id].role].append(id)
             else:
                 self.roles[self.players[id].role] = id
-    
-    def __clearRoles(self):
-        self.__roles = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
 
-    def setPlayerRole(self, id, role):
-        self.players[id].setRole(role)
+
+    # Function to close application
+    def exit(self):
+        print("Thanks for playing!")
+        exit()
+
 
 
 game = Game(1, 7)
 game.addPlayers()
 game.dealHands()
-#game.players[1].printHand()
+game.players[1].setRole(ROLES[0])
+game.players[2].setRole(ROLES[1])
+game.players[3].setRole(ROLES[3])
+game.players[4].setRole(ROLES[4])
 for i in game.players:
     game.players[i].printHand()
 

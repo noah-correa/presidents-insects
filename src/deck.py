@@ -2,6 +2,7 @@ from card import Card
 import random
 
 class Deck(object):
+    
     def __init__(self):
         self.__deck = []
         self.__dealt = []
@@ -57,7 +58,6 @@ class Deck(object):
     # Deal a hand of n cards from deck
     def deal(self, n):
         remaining_cards = [card for card in self.__deck if card not in self.__dealt]
-        print(len(remaining_cards))
         hand_index = random.sample(range(len(remaining_cards)-1), n)
         hand = []
         for i in hand_index:
