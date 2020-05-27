@@ -1,5 +1,5 @@
 from deck import Deck
-from player import *
+from player import Player
 from bot import Bot
 from card import Card
 

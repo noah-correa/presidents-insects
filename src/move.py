@@ -2,7 +2,7 @@
 
 class Move(object):
 
-    def __init__(self, id, cards, rank):
+    def __init__(self, id=0, cards=[], rank=0):
         self.__id = id
         self.__cards = cards
         self.__nCards = len(cards)

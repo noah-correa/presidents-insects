@@ -79,7 +79,7 @@ class Player(object):
 
     # Adds a card from the players hand to their move cards
     def addCardMove(self, i):
-        if self.move is not None and self.hand[i] != self.move[0]:
+        if self.move != [] and self.hand[i] != self.move[0]:
             self.hand.extend(self.move)
             self.move.append(self.hand[i])
             self.moveRank = self.hand[i].rank
