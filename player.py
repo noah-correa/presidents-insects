@@ -1,3 +1,8 @@
+"""
+player.py for Presidents and Insects Python Card Game
+Noah Correa
+"""
+
 from move import Move
 
 class Player(object):
@@ -17,6 +22,7 @@ class Player(object):
         self.__move = []
         self.__moveRank = 0
         self.__passed = 0
+        self.__isBot = 0
 
     def __str__(self):
         return f"Player: {self.name}, ID: {self.id}, Role: {self.role}."
@@ -53,6 +59,10 @@ class Player(object):
     def passed(self):
         return self.__passed
 
+    @property
+    def isBot(self):
+        return self.__isBot
+
     def resetPassed(self):
         self.__passed = 0
 
@@ -67,44 +77,57 @@ class Player(object):
     def sortHand(self):
         self.__hand.sort(key=lambda x: x.rank)
 
+    # Prints player's hand
     def printHand(self):
         ret = f"--- {self.name}'s hand ({self.role}) ---\n"
         for i in range(len(self.hand)):
             ret += f"{i+1}. {str(self.hand[i])}\n"
         print(ret)
 
+    # Prints player's move
+    def printMove(self):
+        ret = f"--- {self.name}'s move ({self.role}) ---\n"
+        for i in range(len(self.move)):
+            ret += f"{i+1}. {str(self.move[i])}\n"
+        print(ret)
+
+    # Adds given card to player's hand
     def addCardHand(self, card):
         self.hand.append(card)
         self.sortHand()
 
     # Adds a card from the players hand to their move cards
     def addCardMove(self, i):
-        if self.move != [] and self.hand[i] != self.move[0]:
+        if self.move != [] and self.hand[i].value != self.move[0].value:
             self.hand.extend(self.move)
-            self.move.append(self.hand[i])
-            self.moveRank = self.hand[i].rank
+            self.__move = [self.hand[i]]
+            self.__moveRank = self.hand[i].rank
             self.hand.pop(i)
             self.sortHand()
         else:
             self.move.append(self.hand[i])
-            self.moveRank += self.hand[i].rank
+            self.__moveRank += self.hand[i].rank
             self.tripleSix()
             self.hand.pop(i)
             self.sortHand()
 
     # Commits the card(s) in players move to the pile
     def playTurn(self):
+        if self.move == []:
+            self.passTurn()
         ret = Move(self.id, self.move, self.moveRank)
-        self.move = []
-        self.moveRank = 0
+        self.__move = []
+        self.__moveRank = 0
+        print(ret)
         return ret
 
     # Player passes turn, if any cards were in move, they are added back to hand
     def passTurn(self):
         self.__passed = 1
         self.__hand.extend(self.move)
+        self.__move = []
         self.sortHand()
-        return []
+        return Move(self.id)
 
     # Returns objectively lowest card in player's hand
     def lowOne(self):
@@ -140,15 +163,13 @@ class Player(object):
     # Updates player attributes if triple six is in move
     def tripleSix(self):
         if self.__isTripleSix(self.move) is True:
-            self.moveRank = 62
+            self.__moveRank = 62
 
     # Helper function to determine if cards in given list is triple sixes
     def __isTripleSix(self, cards):
         if len(cards) == 3:
             for card in cards:
-                if card.value == 6:
+                if card.value == "6":
                     continue
-                else:
-                    return False
+                return False
             return True
-

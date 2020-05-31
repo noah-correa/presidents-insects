@@ -1,3 +1,8 @@
+"""
+card.py for Presidents and Insects Python Card Game
+Noah Correa
+"""
+
 import pygame
 
 class Card(object):
@@ -7,7 +12,8 @@ class Card(object):
         self.__value = value
         self.__suit = suit
         self.__kingHearts = self.__isKingHearts()
-        self.__img = pygame.image.load("images/" + self.value[0] + self.suit[0] + ".png")
+        self.__img = pygame.transform.scale(pygame.image.load("images/" + self.value + self.suit[0] + ".png"), (115,176))
+        self.__back = pygame.image.load("images/red_back.png")
 
     def __repr__(self):
         return f"<{self.__value} of {self.__suit} ({self.__rank})>"
@@ -16,16 +22,16 @@ class Card(object):
         return f"{self.__value} of {self.__suit}."
 
     def __lt__(self, other):
-        return self.__rank < other.__rank
+        return self.__rank < other.rank
 
     def __eq__(self, other):
-        return ((self.__suit == other.suit) and (self.value == other.value))
+        return (self.__suit == other.suit) and (self.value == other.value)
 
     def __ne__(self, other):
-        return not(self.__eq__(other))
+        return not self.__eq__(other)
 
     def __gt__(self, other):
-        return self.__rank > other.__rank
+        return self.__rank > other.rank
 
     @property
     def rank(self):
@@ -42,7 +48,7 @@ class Card(object):
     @property
     def kingHearts(self):
         return self.__kingHearts
-    
+
     @property
     def img(self):
         return self.__img

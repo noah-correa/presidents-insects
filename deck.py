@@ -1,8 +1,13 @@
-from card import Card
+"""
+deck.py for Presidents and Insects Python Card Game
+Noah Correa
+"""
+
 import random
 
+from card import Card
+
 class Deck(object):
-    
     def __init__(self):
         self.__deck = []
         self.__dealt = []
@@ -24,7 +29,7 @@ class Deck(object):
                 else:
                     value = str(rank)
                 self.__deck.append(Card(rank, value, suit))
-    
+
     def __str__(self):
         return f"Deck has {len(self.__deck)} cards and has dealt {len(self.__dealt)} cards."
 
@@ -63,4 +68,3 @@ class Deck(object):
 
     def spareCards(self):
         return [card for card in self.__deck if card not in self.__dealt]
-

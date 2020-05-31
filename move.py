@@ -1,26 +1,31 @@
-
+"""
+move.py for Presidents and Insects Python Card Game
+Noah Correa
+"""
 
 class Move(object):
-
-    def __init__(self, id=0, cards=[], rank=0):
-        self.__id = id
+    def __init__(self, pid, cards=None, rank=0):
+        self.__pid = pid
         self.__cards = cards
-        self.__nCards = len(cards)
+        self.__nCards = 0 if cards is None else len(cards)
         self.__rank = rank
-        self.__noMove = False if self.id != 0 else True
+        self.__noMove = not cards
         self.__kingHearts = self.__isKingHearts()
         self.__tripSix = self.__isTripSix()
 
     def __str__(self):
-        ret = f"ID: {self.id}, Cards = [ "
-        for card in self.cards:
-            ret += f"({str(card)}) "
-        ret += f"], Rank: {self.rank}."
+        ret = f"Player ID = {self.pid} played cards: [ "
+        if self.cards is None:
+            ret = f"Player ID = {self.pid} passed."
+        else:
+            for card in self.cards:
+                ret += f"({str(card)}) "
+            ret += f"], Rank: {self.rank}."
         return ret
 
     @property
-    def id(self):
-        return self.__id
+    def pid(self):
+        return self.__pid
 
     @property
     def cards(self):
@@ -39,11 +44,13 @@ class Move(object):
         return self.__noMove
 
     def __isKingHearts(self):
+        if self.cards is None:
+            return 0
         for card in self.cards:
             if card.kingHearts:
                 return 1
         return 0
-    
+
     def __isTripSix(self):
         if self.nCards >= 3:
             for i in range(self.nCards - 1):
@@ -51,4 +58,3 @@ class Move(object):
                     self.__rank = 62
                     return 1
         return 0
-

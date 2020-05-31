@@ -1,5 +1,9 @@
+"""
+bot.py for Presidents and Insects Python Card Game
+Noah Correa
+"""
+
 from player import Player
-from move import Move
 
 class Bot(Player):
 
@@ -18,6 +22,7 @@ class Bot(Player):
         self.__kingHearts = -1
         self.__tripSix = -1
         super().__init__(f"Bot {self.__idBot}")
+        self.__isBot = 1
 
     @property
     def idBot(self):
@@ -43,8 +48,18 @@ class Bot(Player):
     def tripSix(self):
         return self.__tripSix
 
+    def botPlayTurn(self, move):
+        self.decideMove(move)
+        if self.move == []:
+            return self.passTurn()
+        else:
+            return self.playTurn()
+
     def decideMove(self, move):
         self.__groupHand()
+        if move.noMove:
+            self.addCardMove(0)
+            return
         if move.nCards == 4 and self.quads != {}:
             for i in self.quads:
                 if self.quads[i].rank * 4 > move.rank:
@@ -64,7 +79,7 @@ class Bot(Player):
                         self.addCardMove(i+j)
                     return
         if move.nCards == 1:
-            for i in self.hand:
+            for i in range(len(self.hand)):
                 if self.hand[i].rank > move.rank:
                     self.addCardMove(i)
                     return
@@ -75,7 +90,6 @@ class Bot(Player):
             for i in range(3):
                 self.addCardMove(self.tripSix + i)
             return
-                        
 
     def __groupHand(self):
         self.__pairs = {}
@@ -83,23 +97,23 @@ class Bot(Player):
         self.__quads = {}
         self.__tripSix = -1
         self.__kingHearts = -1
-        for i in len(self.nCards):
-            if i + 3 < len(self.nCards):
-                if self.hand[i].value == self.hand[i+1].value: 
+        for i in range(self.nCards):
+            if i + 3 < self.nCards:
+                if self.hand[i].value == self.hand[i+1].value:
                     if self.hand[i].value == self.hand[i+2].value:
                         if self.hand[i].value == self.hand[i+3].value:
                             if (i not in self.pairs) and (i not in self.trips):
                                 self.__quads[i] = [i, i+1, i+2, i+3]
-            if i + 2 < len(self.nCards):
-                if self.hand[i].value == self.hand[i+1].value: 
+            if i + 2 < self.nCards:
+                if self.hand[i].value == self.hand[i+1].value:
                     if self.hand[i].value == self.hand[i+2].value:
                         if i not in self.pairs and i not in self.quads:
                             if self.hand[i].value == "6":
                                 self.__tripSix = i
                             else:
                                 self.__trips[i] = [i, i+1, i+2]
-            if i + 1 < len(self.nCards):
-                if self.hand[i].value == self.hand[i+1].value: 
+            if i + 1 < self.nCards:
+                if self.hand[i].value == self.hand[i+1].value:
                     if i not in self.quads and i not in self.trips:
                         self.__pairs[i] = [i, i+1]
             if self.hand[i].kingHearts:
