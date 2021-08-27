@@ -1,5 +1,11 @@
-from card import Card
+"""
+deck.py for Presidents and Insects Python Card Game
+Noah Correa
+"""
+
 import random
+
+from card import Card
 
 class Deck(object):
     def __init__(self):
@@ -9,7 +15,6 @@ class Deck(object):
         suits = ["Clubs", "Spades", "Diamonds", "Hearts"]
         for suit in suits:
             for rank in range(2, 15):
-                kingHearts = False
                 if rank == 2:
                     value = str(rank)
                     rank = 15
@@ -19,15 +24,12 @@ class Deck(object):
                     value = "Queen"
                 elif rank == 13:
                     value = "King"
-                    if suit == "Hearts":
-                        rank = 61
-                        kingHearts = True
                 elif rank == 14:
                     value = "Ace"
                 else:
                     value = str(rank)
-                self.__deck.append(Card(rank, value, suit, kingHearts))
-    
+                self.__deck.append(Card(rank, value, suit))
+
     def __str__(self):
         return f"Deck has {len(self.__deck)} cards and has dealt {len(self.__dealt)} cards."
 
@@ -64,3 +66,5 @@ class Deck(object):
             self.__dealt.append(remaining_cards[i])
         return hand
 
+    def spareCards(self):
+        return [card for card in self.__deck if card not in self.__dealt]
