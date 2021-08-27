@@ -91,6 +91,11 @@ class Player(object):
             ret += f"{i+1}. {str(self.move[i])}\n"
         print(ret)
 
+    def addInvalidMove(self, move):
+        if not move.noMove:
+            self.hand.extend(move.cards)
+            self.sortHand()
+
     # Adds given card to player's hand
     def addCardHand(self, card):
         self.hand.append(card)
@@ -98,6 +103,7 @@ class Player(object):
 
     # Adds a card from the players hand to their move cards
     def addCardMove(self, i):
+        print(f"{self.name} is trying to add index: {i} from hand={[str(card) for card in self.hand]} and move={[str(card) for card in self.move]}")
         if self.move != [] and self.hand[i].value != self.move[0].value:
             self.hand.extend(self.move)
             self.__move = [self.hand[i]]
@@ -118,7 +124,7 @@ class Player(object):
         ret = Move(self.id, self.move, self.moveRank)
         self.__move = []
         self.__moveRank = 0
-        print(ret)
+        #print(ret)
         return ret
 
     # Player passes turn, if any cards were in move, they are added back to hand

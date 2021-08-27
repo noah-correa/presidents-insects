@@ -3,6 +3,8 @@ bot.py for Presidents and Insects Python Card Game
 Noah Correa
 """
 
+from time import sleep
+
 from player import Player
 
 class Bot(Player):
@@ -50,6 +52,7 @@ class Bot(Player):
 
     def botPlayTurn(self, move):
         self.decideMove(move)
+        sleep(1.5)
         if self.move == []:
             return self.passTurn()
         else:
@@ -57,26 +60,34 @@ class Bot(Player):
 
     def decideMove(self, move):
         self.__groupHand()
+        # print([str(card) for card in self.hand])
+        # print(self.pairs)
+        # print(self.trips)
+        # print(self.quads)
         if move.noMove:
+            for i, card in enumerate(self.hand):
+                if card.value == "3" and card.suit == "Clubs":
+                    self.addCardMove(i)
+                    return
             self.addCardMove(0)
             return
         if move.nCards == 4 and self.quads != {}:
             for i in self.quads:
-                if self.quads[i].rank * 4 > move.rank:
+                if self.hand[self.quads[i][0]].rank * 4 > move.rank:
                     for j in range(4):
-                        self.addCardMove(i+j)
+                        self.addCardMove(i)
                     return
         if move.nCards == 3 and self.trips != {}:
             for i in self.trips:
-                if self.trips[i].rank * 3 > move.rank:
+                if self.hand[self.trips[i][0]].rank * 3 > move.rank:
                     for j in range(3):
-                        self.addCardMove(i+j)
+                        self.addCardMove(i)
                     return
         if move.nCards == 2 and self.pairs != {}:
             for i in self.pairs:
-                if self.pairs[i].rank * 2 > move.rank:
+                if self.hand[self.pairs[i][0]].rank * 2 > move.rank:
                     for j in range(2):
-                        self.addCardMove(i+j)
+                        self.addCardMove(i)
                     return
         if move.nCards == 1:
             for i in range(len(self.hand)):
@@ -88,7 +99,7 @@ class Bot(Player):
             return
         if self.tripSix != -1:
             for i in range(3):
-                self.addCardMove(self.tripSix + i)
+                self.addCardMove(self.tripSix)
             return
 
     def __groupHand(self):

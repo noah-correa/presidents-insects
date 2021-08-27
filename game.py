@@ -10,7 +10,6 @@ from player import Player
 from bot import Bot
 from move import Move
 
-from card import Card
 
 ROLES = ["President", "Vice-President", "Citizen", "Insect", "Giga-Insect"]
 
@@ -29,10 +28,9 @@ class Game(object):
         self.__roundNumber = 0
         self.__turnNumber = 0
         self.__currPlayer = 0
-        self.__turnWinner = 0
         self.__topMove = Move(0)
-        self.game_loop()
 
+        self.game_loop()
 
     @property
     def deck(self):
@@ -87,10 +85,6 @@ class Game(object):
         return self.__topMove
 
     @property
-    def turnWinner(self):
-        return self.__turnWinner
-
-    @property
     def gameNumber(self):
         return self.__gameNumber
 
@@ -120,14 +114,14 @@ class Game(object):
         #         badName = self.__checkName(name)
         #     new_player = Player(name)
         #     self.players[new_player.id] = new_player
-        # self.updateRoles()
+        # self.__updateRoles()
         for i in range(self.nBots):
             new_bot = Bot()
             self.players[new_bot.id] = new_bot
         for i in range(self.nPlayers):
             new_player = Player(f"Player {i+1}")
             self.players[new_player.id] = new_player
-        self.updateRoles()
+        self.__updateRoles()
 
     # Deals hand to all players
     def __dealHands(self):
@@ -152,7 +146,7 @@ class Game(object):
                         self.players[self.roles[ROLES[1]]].addCardHand(remaining[i])
 
     # Updates roles dict in game class
-    def updateRoles(self):
+    def __updateRoles(self):
         self.__roles = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
         for i in self.players:
             if self.players[i].role == ROLES[2]:
@@ -167,6 +161,27 @@ class Game(object):
                 if card.value == "3" and card.suit == "Clubs":
                     return i
         return -1
+
+    def __updatePlayerRole(self):
+        self.winners.append(self.__findLastPlayer())
+        for i in range(self.nTotal):
+            if i == 2:
+                for j in range(self.nTotal - 4):
+                    self.players[self.winners[i+j]].setRole(i)
+            else:
+                self.players[self.winners[i]].setRole(i)
+
+    def __findLastPlayer(self):
+        for i in self.players:
+            if self.players[i].nCards != 0:
+                return i
+        return 0
+
+    def __playersNumCards(self):
+        ret = ""
+        for i in self.players:
+            ret += f"{self.players[i].name}: {self.players[i].nCards} cards. "
+        return ret
 
     def __resetHands(self):
         for i in self.players:
@@ -187,80 +202,104 @@ class Game(object):
         self.__resetHands()
         self.__resetDeck()
         self.__dealHands()
-        if self.roundNumber != 0:
+        if self.gameNumber != 0:
             self.players[self.roles[ROLES[0]]].addTwo(self.players[self.roles[ROLES[4]]].highTwo())
             self.players[self.roles[ROLES[4]]].addTwo(self.players[self.roles[ROLES[0]]].lowTwo())
             self.players[self.roles[ROLES[1]]].addCardHand(self.players[self.roles[ROLES[3]]].highOne())
             self.players[self.roles[ROLES[3]]].addCardHand(self.players[self.roles[ROLES[1]]].lowOne())
+
         self.__currPlayer = self.__findFirstTurn()
-        self.__roundNumber += 1
-        self.__turnNumber = 0
-        #print(f"\t=== ROUND {self.roundNumber} ===")
+        self.__gameNumber += 1
+        self.__roundNumber = 0
+        self.__winners = []
+        self.newRound()
 
     # Sets up for a new round
     def newRound(self):
         self.__resetPassed()
-        self.__resetHands()
-        self.__resetDeck()
-        self.__dealHands()
-        if self.roundNumber != 0:
-            self.players[self.roles[ROLES[0]]].addTwo(self.players[self.roles[ROLES[4]]].highTwo())
-            self.players[self.roles[ROLES[4]]].addTwo(self.players[self.roles[ROLES[0]]].lowTwo())
-            self.players[self.roles[ROLES[1]]].addCardHand(self.players[self.roles[ROLES[3]]].highOne())
-            self.players[self.roles[ROLES[3]]].addCardHand(self.players[self.roles[ROLES[1]]].lowOne())
-        self.__currPlayer = self.__findFirstTurn()
         self.__roundNumber += 1
-        self.__turnNumber = 0
-        #print(f"\t=== ROUND {self.roundNumber} ===")
-
-    def resetTurn(self):
-        # TODO
-        pass
+        self.__turnNumber = 1
+        self.__topMove = Move(0)
 
 
     # Finds id of player of next turn
     def nextTurnPlayer(self):
-        pid = self.currPlayer + 1
-        for i in range(self.nTotal):
+        pid = self.currPlayer
+        for i in range(1, self.nTotal):
+            pid += 1
             if pid > self.nTotal:
-                pid = 1
-            if self.players[pid].passed == 0 and self.players[pid].nCards != 0:
+                pid -= self.nTotal
+            print(f"--> Testing pid = {pid} ({self.players[pid].name})")
+            if not self.players[pid].passed and pid not in self.winners and pid != self.topMove.pid and self.players[pid].nCards != 0:
                 return pid
-            else:
-                pid += 1
-        if pid == self.currPlayer + 1:
+        
+        if self.players[pid].nCards == 0:
+            return self.nextDefaultPlayer()
+        else:
             return 0
 
-    def nextTurn(self):
-        # TODO
-        pass
-
-    def validMove(self, move):
-        if self.topMove.noMove and not move.noMove:
-            return 1
-        if move.nCards != self.topMove.nCards and (move.kingHeats or move.tripSix):
-            return 1
-
-        # TODO CHECK
+    def nextDefaultPlayer(self):
+        pid = self.currPlayer
+        for i in range(1, self.nTotal):
+            pid += 1
+            if pid > self.nTotal:
+                pid -= self.nTotal
+            if self.players[pid].nCards != 0:
+                return pid
         return 0
 
-    def getUserInput(self, pid):
+
+
+    # Checks if move is valid
+    def validMove(self, move):
+        if self.topMove.noMove:
+            if move.noMove:
+                return 0
+            if self.roundNumber == 1:
+                for card in move.cards:
+                    if card.value == "3" and card.suit == "Clubs":
+                        return 1
+                return 0
+            return 1
+        if move.noMove:
+            return 1
+        if move.rank > self.topMove.rank:
+            if move.nCards == self.topMove.nCards:
+                return 1
+            if move.kingHearts or move.tripSix:
+                return 1
+            return 0
+        return 0
+
+    def getUserInput(self):
+        self.players[self.currPlayer].printHand()
+        self.players[self.currPlayer].printMove()
         while True:
             user_input = input("Which card do you want to add to your move? ")
             if user_input == "pass":
-                return self.players[pid].passTurn()
+                return self.players[self.currPlayer].passTurn()
             elif user_input == "play":
-                return self.players[pid].playTurn()
+                return self.players[self.currPlayer].playTurn()
             elif user_input == "q":
                 self.exit()
             elif user_input == "":
-                self.players[pid].printHand()
-                self.players[pid].printMove()
+                print(f"\n\n\t=== GAME {self.gameNumber} - ROUND {self.roundNumber} - TURN {self.turnNumber} ===")
+                print(self.__playersNumCards())
+                print("Top of Pile:\n\t" + str(self.topMove) + f" played by {self.topMove.pid}")
+                self.players[self.currPlayer].printHand()
+                self.players[self.currPlayer].printMove()
             else:
-                user_input = int(user_input) - 1
-                self.players[pid].addCardMove(user_input)
-                self.players[pid].printHand()
-                self.players[pid].printMove()
+                try:
+                    user_input = int(user_input) - 1
+                except ValueError:
+                    print("\nInvalid input, please try again...\n")
+                    continue
+                if user_input >= len(self.players[self.currPlayer].hand) or user_input < 0:
+                    print("\nInvalid card, please try again...\n")
+                else:
+                    self.players[self.currPlayer].addCardMove(user_input)
+                    self.players[self.currPlayer].printHand()
+                    self.players[self.currPlayer].printMove()
 
     def addTopMove(self, move):
         if move.noMove:
@@ -274,10 +313,47 @@ class Game(object):
 
         run = True
         while run:
+            print(f"\n\n\t=== GAME {self.gameNumber} - ROUND {self.roundNumber} - TURN {self.turnNumber} ({self.players[self.currPlayer].name}) ===")
+            print(self.__playersNumCards())
+            print("Top of Pile:\n\t" + str(self.topMove) + f" played by {self.topMove.pid}")
+
+            isValidMove = 0
             if isinstance(self.players[self.currPlayer], Bot):
-                self.addTopMove(self.players[self.currPlayer].botPlayTurn(self.topMove))
+                botMove = self.players[self.currPlayer].botPlayTurn(self.topMove)
+                isValidMove = self.validMove(botMove)
+                if isValidMove:
+                    self.addTopMove(botMove)
+                    print(f"Bot {self.players[self.currPlayer].id} has {self.players[self.currPlayer].nCards} cards left after playing:\n\t" + str(botMove))
+                else:
+                    print(f"Bot {self.players[self.currPlayer].id} played invalid move:\n\t" + str(botMove))
+
             else:
-                self.addTopMove(self.getUserInput(self.currPlayer))
+                while True:
+                    playerMove = self.getUserInput()
+                    isValidMove = self.validMove(playerMove)
+                    if isValidMove:
+                        break
+                    print("\nMove invalid, please try again...\n")
+                    self.players[self.currPlayer].addInvalidMove(playerMove)
+                self.addTopMove(playerMove)
+                print(f"Player has {self.players[self.currPlayer].nCards} cards left after playing:\n\t" + str(playerMove))
+
+            if self.players[self.currPlayer].nCards == 0:
+                print(f"==> {self.players[self.currPlayer].name} is now out in winners = {self.winners}")
+                self.winners.append(self.currPlayer)
+            if len(self.winners) == self.nTotal - 1:
+                self.__updatePlayerRole()
+                self.__updateRoles()
+                self.newGame()
+                continue
+
+            next_pid = self.nextTurnPlayer()
+            if next_pid == 0:
+                self.__currPlayer = self.topMove.pid
+                self.newRound()
+            else:
+                self.__currPlayer = next_pid
+                self.__turnNumber += 1
 
 
 
@@ -293,16 +369,17 @@ class Game(object):
 print("\t=== President and Insects ===\n\t    --- By Noah Correa ---\n")
 
 while True:
-    total = input("Enter number of total players (5-7): ")
+    num = input("Enter number of total players (5-7): ")
     try:
-        total = int(total)
-        if total < 5 or total > 7:
+        num = int(num)
+        if num < 5 or num > 7:
             print("Error: please enter a number between 5 and 7")
             continue
         break
     except ValueError:
         print("Error: please enter a valid number")
-game = Game(1, total)
+print("\n\nLOADING...\n\n")
+game = Game(1, num)
 
 
 # for i in game.players:
