@@ -30,7 +30,8 @@ class Game(object):
         self.__currPlayer = 0
         self.__topMove = Move(0)
 
-        self.game_loop()
+        self.addPlayers()
+        # self.game_loop()
 
     @property
     def deck(self):
@@ -229,7 +230,7 @@ class Game(object):
             pid += 1
             if pid > self.nTotal:
                 pid -= self.nTotal
-            print(f"--> Testing pid = {pid} ({self.players[pid].name})")
+            # print(f"--> Testing pid = {pid} ({self.players[pid].name})")
             if not self.players[pid].passed and pid not in self.winners and pid != self.topMove.pid and self.players[pid].nCards != 0:
                 return pid
         
@@ -366,20 +367,20 @@ class Game(object):
 
 
 
-print("\t=== President and Insects ===\n\t    --- By Noah Correa ---\n")
+# print("\t=== President and Insects ===\n\t    --- By Noah Correa ---\n")
 
-while True:
-    num = input("Enter number of total players (5-7): ")
-    try:
-        num = int(num)
-        if num < 5 or num > 7:
-            print("Error: please enter a number between 5 and 7")
-            continue
-        break
-    except ValueError:
-        print("Error: please enter a valid number")
-print("\n\nLOADING...\n\n")
-game = Game(1, num)
+# while True:
+#     num = input("Enter number of total players (5-7): ")
+#     try:
+#         num = int(num)
+#         if num < 5 or num > 7:
+#             print("Error: please enter a number between 5 and 7")
+#             continue
+#         break
+#     except ValueError:
+#         print("Error: please enter a valid number")
+# print("\n\nLOADING...\n\n")
+# game = Game(1, num)
 
 
 # for i in game.players:

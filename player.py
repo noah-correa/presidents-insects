@@ -103,7 +103,7 @@ class Player(object):
 
     # Adds a card from the players hand to their move cards
     def addCardMove(self, i):
-        print(f"{self.name} is trying to add index: {i} from hand={[str(card) for card in self.hand]} and move={[str(card) for card in self.move]}")
+        # print(f"{self.name} is trying to add index: {i} from hand={[str(card) for card in self.hand]} and move={[str(card) for card in self.move]}")
         if self.move != [] and self.hand[i].value != self.move[0].value:
             self.hand.extend(self.move)
             self.__move = [self.hand[i]]
