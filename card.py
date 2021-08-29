@@ -5,7 +5,7 @@ Noah Correa
 
 import pygame
 
-class Card(object):
+class Card():
 
     def __init__(self, rank, value, suit):
         self.__rank = rank

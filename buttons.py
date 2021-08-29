@@ -16,7 +16,7 @@ def text_objects(text, font, colour):
 def load_text(size):
     return pygame.font.Font('freesansbold.ttf', size)
 
-class button():
+class Button():
     def __init__(self, colour, x, y, width, height, text=''):
         self.colour = colour
         self.x = x
@@ -50,7 +50,7 @@ class button():
         else:
             self.colour = BG_COLOUR
 
-class card_button():
+class CardButton():
     def __init__(self, card):
         self.card = card
         self.x = None

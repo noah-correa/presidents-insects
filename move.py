@@ -3,7 +3,7 @@ move.py for Presidents and Insects Python Card Game
 Noah Correa
 """
 
-class Move(object):
+class Move():
     def __init__(self, pid, cards=None, rank=0):
         self.__pid = pid
         self.__cards = cards

@@ -5,7 +5,7 @@ Noah Correa
 
 from move import Move
 
-class Player(object):
+class Player():
 
     __id = 0
 

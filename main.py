@@ -7,14 +7,14 @@ import pygame
 
 from game import Game
 from buttons import *
-
-
+from player import Player
 
 
 
 pygame.init()
 
 window = pygame.display.set_mode((WINDOW_W, WINDOW_H))
+# print(type(window))
 window.fill(BG_COLOUR)
 pygame.display.set_caption("Presidents and Insects")
 pygame.display.set_icon(pygame.image.load('images/cockroach.png'))
@@ -24,8 +24,8 @@ pygame.display.update()
 # Main menu screen
 def game_intro():
 
-    b_play = button(BG_COLOUR, WINDOW_W//2-300, 2*WINDOW_H//3, 200, 100, 'Play')
-    b_rules = button(BG_COLOUR, WINDOW_W//2+100, 2*WINDOW_H//3, 200, 100, 'Rules')
+    b_play = Button(BG_COLOUR, WINDOW_W//2-300, 2*WINDOW_H//3, 200, 100, 'Play')
+    b_rules = Button(BG_COLOUR, WINDOW_W//2+100, 2*WINDOW_H//3, 200, 100, 'Rules')
 
     run = True
     while run:
@@ -65,10 +65,10 @@ def game_intro():
 # Choose total number of players screen
 def singleplayer_number():
 
-    b_back = button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
-    b_5 = button(BG_COLOUR, WINDOW_W // 2 - 200, WINDOW_H // 2, 100, 100, '5')
-    b_6 = button(BG_COLOUR, WINDOW_W // 2 - 50, WINDOW_H // 2, 100, 100, '6')
-    b_7 = button(BG_COLOUR, WINDOW_W // 2 + 100, WINDOW_H // 2, 100, 100, '7')
+    b_back = Button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
+    b_5 = Button(BG_COLOUR, WINDOW_W // 2 - 200, WINDOW_H // 2, 100, 100, '5')
+    b_6 = Button(BG_COLOUR, WINDOW_W // 2 - 50, WINDOW_H // 2, 100, 100, '6')
+    b_7 = Button(BG_COLOUR, WINDOW_W // 2 + 100, WINDOW_H // 2, 100, 100, '7')
 
     run = True
     while run:
@@ -115,7 +115,7 @@ def singleplayer_number():
 # Rules screen
 def rules():
 
-    b_back = button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
+    b_back = Button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
 
     run = True
     while run:
@@ -140,7 +140,7 @@ def rules():
     quit_game()
 
 
-def loading_screen(total):
+def loading_screen(total: int) -> None:
     window.fill(BG_COLOUR)
     text = load_text(50)
     title, title_rect = text_objects("LOADING", text, BLACK)
@@ -153,8 +153,8 @@ def loading_screen(total):
     game_loop(game)
 
 # Game screen
-def game_loop(game):
-    b_back = button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
+def game_loop(game: Game) -> None:
+    b_back = Button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
     game.newGame()
     run = True
     while run:
@@ -162,7 +162,7 @@ def game_loop(game):
         pos = pygame.mouse.get_pos()
         b_back.draw(window)
         player = game.players[game.getPlayerId("Player 1")]
-        p_hand = draw_player_hand(window, pos, player)
+        p_hand, p_move = draw_player_cards(window, pos, player)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -173,14 +173,16 @@ def game_loop(game):
                 for i, card in enumerate(p_hand):
                     if card.isOver(pos):
                         player.addCardMove(i)
-                        draw_player_move(window, pos, player)
-                        # draw_player_hand(window, pos, player)
+                        # draw_player_move(window, pos, player)
+                        # p_hand, p_move = draw_player_cards(window, pos, player)
+                        draw_player_cards(window, pos, player)
 
             if event.type == pygame.MOUSEMOTION:
                 b_back.hover(pos)
                 for i, card in enumerate(p_hand):
                     if card.isOver(pos):
-                        draw_player_hand(window, pos, player)
+                        # p_hand, p_move = draw_player_cards(window, pos, player)
+                        draw_player_cards(window, pos, player)
 
         pygame.display.update()
         pygame.time.delay(15)
@@ -188,21 +190,32 @@ def game_loop(game):
     quit_game()
 
 
+# Draws both player hand and move cards
+def draw_player_cards(win, pos, player: Player) -> tuple(([CardButton], [CardButton])):
+    pHand = draw_player_hand(win, pos, player)
+    pMove = draw_player_move(win, pos, player)
+    return pHand, pMove
 
 
-def draw_player_hand(win, pos, player):
+# Draws the players hand on screen
+def draw_player_hand(win, pos, player: Player) -> [CardButton]:
     ret = []
     start = WINDOW_W//2 - 115 * len(player.hand)//2
     for i, card in enumerate(player.hand):
-        card = card_button(player.hand[i])
+        card = CardButton(player.hand[i])
         card.draw(win, pos, start + 115 * i, WINDOW_H - 176//2)
         ret.append(card)
-            
     return ret
 
-def draw_player_move(win, pos, player):
-    card = card_button(player.move[0])
-    card.draw(win, pos, WINDOW_W//2 - 115//2, WINDOW_H - 176 - 25)
+# Draws the players selected move on screen
+def draw_player_move(win, pos, player: Player) -> [CardButton]:
+    ret = []
+    start = WINDOW_W//2 - 115 * len(player.move)//2
+    for i, card in enumerate(player.move):
+        card = CardButton(player.move[i])
+        card.draw(win, pos, start + 115 * i, WINDOW_H - 176 - 176//4 - 176//2)
+        ret.append(card)
+    return ret
 
 # Quit game
 def quit_game():
@@ -210,6 +223,6 @@ def quit_game():
     sys.exit()
     # quit()
 
-
-game_intro()
-quit_game()
+if __name__ == "__main__":
+    game_intro()
+    quit_game()
