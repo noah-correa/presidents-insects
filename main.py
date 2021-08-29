@@ -6,7 +6,7 @@ import sys
 import pygame
 
 from game import Game
-from buttons import *
+from buttons import WINDOW_H, WINDOW_W, BG_COLOUR, Button, load_text, text_objects, BLACK, CardButton
 from player import Player
 
 
@@ -154,34 +154,49 @@ def loading_screen(total: int) -> None:
 
 # Game screen
 def game_loop(game: Game) -> None:
-    b_back = Button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
     game.newGame()
-    run = True
-    while run:
+    b_back = Button(BG_COLOUR, 0, WINDOW_H - 100, 200, 100, 'Back')
+    # run = True
+    while True:
         window.fill(BG_COLOUR)
         pos = pygame.mouse.get_pos()
         b_back.draw(window)
         player = game.players[game.getPlayerId("Player 1")]
         p_hand, p_move = draw_player_cards(window, pos, player)
+
+        # Loop through events
         for event in pygame.event.get():
+            # Check if game quit
             if event.type == pygame.QUIT:
-                run = False
+                break
+
+            # Check if mouse clicked
             if event.type == pygame.MOUSEBUTTONDOWN:
+                # Check if back button clicked
                 if b_back.isOver(pos):
-                    run = False
                     game_intro()
+                    # run = False
+                    break
+
+                # Check which card was clicked
                 for i, card in enumerate(p_hand):
                     if card.isOver(pos):
                         player.addCardMove(i)
-                        # draw_player_move(window, pos, player)
-                        # p_hand, p_move = draw_player_cards(window, pos, player)
+                        draw_player_cards(window, pos, player)
+                for i, card in enumerate(p_move):
+                    if card.isOver(pos):
+                        # print(card)
+                        # print(card.getCard())
+                        player.addCardMoveHand(card.getCard())
                         draw_player_cards(window, pos, player)
 
+            # Check if cards are hovered
             if event.type == pygame.MOUSEMOTION:
                 b_back.hover(pos)
+                draw_player_cards(window, pos, player)
+                # Check which card cursor is over
                 for i, card in enumerate(p_hand):
                     if card.isOver(pos):
-                        # p_hand, p_move = draw_player_cards(window, pos, player)
                         draw_player_cards(window, pos, player)
 
         pygame.display.update()

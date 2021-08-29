@@ -59,6 +59,10 @@ class CardButton():
         self.h = 176
         self.outline = 0
 
+
+    def getCard(self):
+        return self.card
+
     def draw(self, win, pos, x, y):
         #Call this method to draw the button on the screen
         self.x = x

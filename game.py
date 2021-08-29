@@ -141,10 +141,10 @@ class Game(object):
                 for i, pid in enumerate(citizens):
                     self.players[pid].addCardHand(spares[i])
                 remaining = spares[len(citizens):]
-                for i in range(len(remaining)):
-                    self.players[self.roles[ROLES[i+3]]].addCardHand(remaining[i])
+                for i, card in range(len(remaining)):
+                    self.players[self.roles[ROLES[i+3]]].addCardHand(card)
                     if i == 2:
-                        self.players[self.roles[ROLES[1]]].addCardHand(remaining[i])
+                        self.players[self.roles[ROLES[1]]].addCardHand(card)
 
     # Updates roles dict in game class
     def __updateRoles(self):
@@ -226,14 +226,14 @@ class Game(object):
     # Finds id of player of next turn
     def nextTurnPlayer(self):
         pid = self.currPlayer
-        for i in range(1, self.nTotal):
+        for _ in range(1, self.nTotal):
             pid += 1
             if pid > self.nTotal:
                 pid -= self.nTotal
             # print(f"--> Testing pid = {pid} ({self.players[pid].name})")
             if not self.players[pid].passed and pid not in self.winners and pid != self.topMove.pid and self.players[pid].nCards != 0:
                 return pid
-        
+
         if self.players[pid].nCards == 0:
             return self.nextDefaultPlayer()
         else:
@@ -241,7 +241,7 @@ class Game(object):
 
     def nextDefaultPlayer(self):
         pid = self.currPlayer
-        for i in range(1, self.nTotal):
+        for _ in range(1, self.nTotal):
             pid += 1
             if pid > self.nTotal:
                 pid -= self.nTotal

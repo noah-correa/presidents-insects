@@ -74,19 +74,19 @@ class Bot(Player):
         if move.nCards == 4 and self.quads != {}:
             for i in self.quads:
                 if self.hand[self.quads[i][0]].rank * 4 > move.rank:
-                    for j in range(4):
+                    for _ in range(4):
                         self.addCardMove(i)
                     return
         if move.nCards == 3 and self.trips != {}:
             for i in self.trips:
                 if self.hand[self.trips[i][0]].rank * 3 > move.rank:
-                    for j in range(3):
+                    for _ in range(3):
                         self.addCardMove(i)
                     return
         if move.nCards == 2 and self.pairs != {}:
             for i in self.pairs:
                 if self.hand[self.pairs[i][0]].rank * 2 > move.rank:
-                    for j in range(2):
+                    for _ in range(2):
                         self.addCardMove(i)
                     return
         if move.nCards == 1:
@@ -98,7 +98,7 @@ class Bot(Player):
             self.addCardMove(self.kingHearts)
             return
         if self.tripSix != -1:
-            for i in range(3):
+            for _ in range(3):
                 self.addCardMove(self.tripSix)
             return
 
