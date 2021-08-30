@@ -73,7 +73,7 @@ class CardButton():
             self.isOver(pos)
         if self.over:
             # pygame.draw.rect(win, YELLOW, (self.x - 2, self.y - 2, self.w + 4, self.h + 4), 0)
-            self.window.blit(self.card.img, (self.x, self.y - 176//4))
+            self.window.blit(self.card.img, (self.x, self.y - 176//8))
         else:
             self.window.blit(self.card.img, (self.x, self.y))
 
