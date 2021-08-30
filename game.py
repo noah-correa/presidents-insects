@@ -15,20 +15,20 @@ ROLES = ["President", "Vice-President", "Citizen", "Insect", "Giga-Insect"]
 
 class Game(object):
     def __init__(self, players, total):
-        self.__deck = Deck()
-        self.__nTotal = total
-        self.__nPlayers = players
-        self.__nBots = total - players
-        self.__players = {}
-        self.__roles = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
-        self.__nHand = 52//total
-        self.__nSpare = 52%total
-        self.__winners = []
-        self.__gameNumber = 0
-        self.__roundNumber = 0
-        self.__turnNumber = 0
-        self.__currPlayer = 0
-        self.__topMove = Move(0)
+        self.__deck: Deck = Deck()
+        self.__nTotal: int = total
+        self.__nPlayers: int = players
+        self.__nBots: int = total - players
+        self.__players: dict = {}
+        self.__roles: dict = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
+        self.__nHand: int = 52//total
+        self.__nSpare: int = 52%total
+        self.__winners: list = []
+        self.__gameNumber: int = 0
+        self.__roundNumber: int = 0
+        self.__turnNumber: int = 0
+        self.__currPlayer: int = 0
+        self.__topMove: Move = Move(0)
 
         self.addPlayers()
         # self.game_loop()
@@ -126,8 +126,8 @@ class Game(object):
 
     # Deals hand to all players
     def __dealHands(self):
-        for i in range(self.nTotal):
-            self.players[i+1].setHand(self.deck.deal(self.nHand))
+        for _, player in self.players.items():
+            player.setHand(self.deck.deal(self.nHand))
         spares = sample(self.deck.spareCards(), len(self.deck.spareCards()))
         if len(spares) != self.nSpare:
             raise Exception("Too many spare cards in deck")
@@ -185,13 +185,13 @@ class Game(object):
         return ret
 
     def __resetHands(self):
-        for i in self.players:
-            self.players[i].setHand([])
+        for _, player in self.players.items():
+            player.setHand([])
 
     # Resets players passed flags for new round
     def __resetPassed(self):
-        for i in self.players:
-            self.players[i].resetPassed()
+        for _, player in self.players.items():
+            player.resetPassed()
 
     # Resets deck for new round
     def __resetDeck(self):
@@ -308,8 +308,14 @@ class Game(object):
         self.__topMove = move
         return
 
+
+    def nextTurn(self):
+        # TODO
+
+        return
+
     def game_loop(self):
-        self.addPlayers()
+        # self.addPlayers()
         self.newGame()
 
         run = True
