@@ -9,26 +9,33 @@ class Move():
         self.__cards = cards
         self.__nCards = 0 if cards is None else len(cards)
         self.__rank = rank
-        self.__noMove = not cards
+        self.__passed = not cards
         self.__kingHearts = self.__isKingHearts()
         self.__tripSix = self.__isTripSix()
 
-    def __repr__(self):
-        if self.noMove:
+    # def __repr__(self):
+    #     if self.__pid == 0:
+    #         return "No Card."
+    #     ret = f"Player ID = {self.pid} played cards: [ "
+    #     if self.__passed:
+    #         ret = f"Player ID = {self.pid} passed."
+    #     else:
+    #         for card in self.cards:
+    #             ret += f"({str(card)}) "
+    #         ret += f"], Rank: {self.rank}."
+    #     return ret
+
+    def __str__(self):
+        if self.__pid == 0:
             return "No Card."
         ret = f"Player ID = {self.pid} played cards: [ "
-        if self.cards is None:
+        if self.__passed:
             ret = f"Player ID = {self.pid} passed."
         else:
             for card in self.cards:
                 ret += f"({str(card)}) "
             ret += f"], Rank: {self.rank}."
         return ret
-
-    def __str__(self):
-        if self.noMove:
-            return "No Card."
-        return str([str(card) for card in self.cards])
 
     @property
     def pid(self):
@@ -47,8 +54,8 @@ class Move():
         return self.__rank
 
     @property
-    def noMove(self):
-        return self.__noMove
+    def passed(self):
+        return self.__passed
 
     @property
     def kingHearts(self):

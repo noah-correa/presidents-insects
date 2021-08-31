@@ -4,12 +4,13 @@ Noah Correa
 """
 import sys
 import pygame
+from time import sleep
 
 from game import Game
 from move import Move
 from player import Player
 from bot import Bot
-from buttons import WINDOW_H, WINDOW_W, BG_COLOUR, Button, load_text, text_objects, BLACK, CardButton
+from buttons import WINDOW_H, WINDOW_W, BG_COLOUR, Button, load_text, text_objects, BLACK, CardButton, PlainText
 
 
 
@@ -29,8 +30,8 @@ def game_intro():
     b_play = Button(window, WINDOW_W//2-300, 2*WINDOW_H//3, 100, 'Play')
     b_rules = Button(window, WINDOW_W//2+100, 2*WINDOW_H//3, 100, 'Rules')
 
-    # run = True
-    while True:
+    run = True
+    while run:
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -38,10 +39,10 @@ def game_intro():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b_play.isOver(pos):
                     singleplayer_number()
-                    # run = False
+                    run = False
                 if b_rules.isOver(pos):
                     rules()
-                    # run = False
+                    run = False
             if event.type == pygame.MOUSEMOTION:
                 b_play.draw(pos)
                 b_rules.draw(pos)
@@ -78,19 +79,20 @@ def singleplayer_number():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b_back.isOver(pos):
+                    run = False
                     game_intro()
-                    run = False
                 if b_5.isOver(pos):
+                    run = False
                     loading_screen(5)
-                    run = False
                 if b_6.isOver(pos):
+                    run = False
                     loading_screen(6)
-                    run = False
                 if b_7.isOver(pos):
-                    loading_screen(7)
                     run = False
+                    loading_screen(7)
             if event.type == pygame.MOUSEMOTION:
                 b_back.draw(pos)
                 b_5.draw(pos)
@@ -114,6 +116,9 @@ def singleplayer_number():
 
     quit_game()
 
+
+
+
 # Rules screen
 def rules():
 
@@ -127,8 +132,8 @@ def rules():
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b_back.isOver(pos):
-                    game_intro()
                     run = False
+                    game_intro()
 
             if event.type == pygame.MOUSEMOTION:
                 b_back.draw(pos)
@@ -141,6 +146,7 @@ def rules():
         pygame.time.delay(15)
 
     quit_game()
+
 
 
 def loading_screen(total: int) -> None:
@@ -156,103 +162,120 @@ def loading_screen(total: int) -> None:
     pygame.time.delay(500)
     game_loop(game)
 
+
+
 # Game screen
 def game_loop(game: Game) -> None:
     b_back = Button(window, 0, 0, 50, 'Back')
-    # run = True
-    while True:
+    b_play = Button(window, WINDOW_W - 100, WINDOW_H - 110, 50, 'Play')
+    b_pass = Button(window, WINDOW_W - 100, WINDOW_H - 50, 50, 'Pass')
+
+    
+    run = True
+    while run:
+        # Draw all default stuff
         window.fill(BG_COLOUR)
-        # currPlayer = game.currPlayer
-
-        # isValidMove = 0
-        # if isinstance(self.players[self.currPlayer], Bot):
-        #     botMove = self.players[self.currPlayer].botPlayTurn(self.topMove)
-        #     isValidMove = self.validMove(botMove)
-        #     if isValidMove:
-        #         self.addTopMove(botMove)
-        #         # Bot played valid move
-        #     else:
-        #         # Bot played invalid move
-
-        # else:
-        #     while True:
-        #         playerMove = self.getUserInput()
-        #         isValidMove = self.validMove(playerMove)
-        #         if isValidMove:
-        #             break
-        #         print("\nMove invalid, please try again...\n")
-        #         self.players[self.currPlayer].addInvalidMove(playerMove)
-        #     self.addTopMove(playerMove)
-        #     print(f"Player has {self.players[self.currPlayer].nCards} cards left after playing:\n\t" + str(playerMove))
-
-        # if self.players[self.currPlayer].nCards == 0:
-        #     print(f"==> {self.players[self.currPlayer].name} is now out in winners = {self.winners}")
-        #     self.winners.append(self.currPlayer)
-        # if len(self.winners) == self.nTotal - 1:
-        #     self.__updatePlayerRole()
-        #     self.__updateRoles()
-        #     self.newGame()
-        #     continue
-
-        # next_pid = self.nextTurnPlayer()
-        # if next_pid == 0:
-        #     self.__currPlayer = self.topMove.pid
-        #     self.newRound()
-        # else:
-        #     self.__currPlayer = next_pid
-        #     self.__turnNumber += 1
-
-
-
-
+        game_round_turn_text = PlainText(window, WINDOW_W//2, 0, 40, f"Game {game.gameNumber} Round {game.roundNumber} Turn {game.turnNumber}", center=True)
+        game_round_turn_text.draw()
+        nCards_text = PlainText(window, WINDOW_W//2, 60, 40, game.getPlayersNumCards(), center=True)
+        nCards_text.draw()
 
         pos = pygame.mouse.get_pos()
         b_back.draw(pos)
-        player = game.players[game.getPlayerId("Player 1")]
-        p_hand, p_move = draw_player_cards(pos, player)
-        # Loop through events
-        for event in pygame.event.get():
-            # Check if game quit
-            if event.type == pygame.QUIT:
-                quit_game()
+        b_play.draw(pos)
+        b_pass.draw(pos)
 
-            # Check if mouse clicked
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                # Check if back button clicked
-                if b_back.isOver(pos):
-                    game_intro()
-                    # run = False
-                    break
+        topMove: Move = game.topMove
+        draw_top_pile(topMove)
+        nextTurn = False
 
-                # Check which card was clicked
-                for i, card in enumerate(p_hand):
-                    if card.isOver(pos):
-                        player.addCardMove(i)
-                        draw_player_cards(pos, player)
-                for i, card in enumerate(p_move):
-                    if card.isOver(pos):
-                        # print(card)
-                        # print(card.getCard())
-                        player.addCardMoveHand(card.getCard())
-                        draw_player_cards(pos, player)
+        # Game logic
+        currPlayer: Player = game.getCurrentPlayer()
+        currPlayerText = f"{currPlayer.name}'s turn"
+        if not currPlayer.isBot:
+            currPlayerText = "Your turn"
+        cp_text = PlainText(window, WINDOW_W//2, 30, 40, currPlayerText, center=True)
+        cp_text.draw()
 
-            # Check if cards are hovered
-            if event.type == pygame.MOUSEMOTION:
-                b_back.draw(pos)
-                draw_player_cards(pos, player)
-                # Check which card cursor is over
-                for i, card in enumerate(p_hand):
-                    if card.isOver(pos):
-                        draw_player_cards(pos, player)
+
+
+        # Check if bot
+        isValidMove = False
+        if currPlayer.isBot:
+            # Check bot move is valid
+            botMove = currPlayer.botPlayTurn(topMove)
+            isValidMove = game.validMove(botMove)
+            if isValidMove:
+                game.addTopMove(botMove)
+                # Bot played valid move
+                nextTurn = True
+            else:
+                # Bot played invalid move
+                print("ERROR: Bot move invalid")
+                print(f"Bot tried to play: {botMove}")
+
+        else:
+            # Draw Pygame
+            p_hand, p_move = draw_player_cards(pos, currPlayer)
+            # Loop through events
+            for event in pygame.event.get():
+                # Check if game quit
+                if event.type == pygame.QUIT:
+                    run = False
+
+                # Check if mouse clicked
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    # Check if back button clicked
+                    if b_back.isOver(pos):
+                        run = False
+                        game_intro()
+                        break
+                    
+                    playerMove = None
+                    if b_pass.isOver(pos):
+                        playerMove = currPlayer.passTurn()
+                    elif b_play.isOver(pos):
+                        playerMove = currPlayer.playTurn()
+                        
+                    if playerMove is not None:
+                        isValidMove = game.validMove(playerMove)
+
+                        if isValidMove:
+                            game.addTopMove(playerMove)
+                            nextTurn = True
+                        else:
+                            currPlayer.addInvalidMove(playerMove)
+
+                    # Check which card was clicked
+                    for i, card in enumerate(p_hand):
+                        if card.isOver(pos):
+                            currPlayer.addCardMove(i)
+
+                    for i, card in enumerate(p_move):
+                        if card.isOver(pos):
+                            currPlayer.addCardMoveHand(card.getCard())
+
+                # Check if cards are hovered
+                # if event.type == pygame.MOUSEMOTION:
+                #     b_back.draw(pos)
+                    # draw_player_cards(pos, currPlayer)
+                    # Check which card cursor is over
+                    # for i, card in enumerate(p_hand):
+                    #     if card.isOver(pos):
+                    #         draw_player_cards(pos, currPlayer)
+
+        if nextTurn:
+            game.nextTurn()
 
         pygame.display.update()
         pygame.time.delay(15)
 
-    # quit_game()
+    quit_game()
 
 
 # Draw top pile card(s)
 def draw_top_pile(top: Move):
+    # print(top)
     if top.nCards == 0:
         return
     x, y = WINDOW_W//2 - 115//2*top.nCards, WINDOW_H//2 - 176//2

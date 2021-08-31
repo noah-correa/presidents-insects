@@ -23,7 +23,6 @@ class Player():
         self.__move: [Card] = []
         self.__moveRank: int = 0
         self.__passed: int = 0
-        self.__isBot: int = 0
 
     def __str__(self):
         return f"Player: {self.name}, ID: {self.id}, Role: {self.role}."
@@ -62,7 +61,7 @@ class Player():
 
     @property
     def isBot(self):
-        return self.__isBot
+        return False
 
     def resetPassed(self):
         self.__passed = 0
@@ -93,7 +92,7 @@ class Player():
         print(ret)
 
     def addInvalidMove(self, move: [Card]):
-        if not move.noMove:
+        if not move.passed:
             self.hand.extend(move.cards)
             self.sortHand()
 

@@ -24,7 +24,6 @@ class Bot(Player):
         self.__kingHearts = -1
         self.__tripSix = -1
         super().__init__(f"Bot {self.__idBot}")
-        self.__isBot = 1
 
     @property
     def idBot(self):
@@ -50,13 +49,17 @@ class Bot(Player):
     def tripSix(self):
         return self.__tripSix
 
+    @property
+    def isBot(self):
+        return True
+
     def botPlayTurn(self, move):
-        self.decideMove(move)
-        sleep(1.5)
-        if self.move == []:
-            return self.passTurn()
-        else:
+        foundMove = self.decideMove(move)
+        # sleep(1.5)
+        if foundMove:
             return self.playTurn()
+        else:
+            return self.passTurn()
 
     def decideMove(self, move):
         self.__groupHand()
@@ -64,43 +67,45 @@ class Bot(Player):
         # print(self.pairs)
         # print(self.trips)
         # print(self.quads)
-        if move.noMove:
+        if move.pid == 0:
             for i, card in enumerate(self.hand):
                 if card.value == "3" and card.suit == "Clubs":
                     self.addCardMove(i)
-                    return
+                    return True
+            print(f"[{self.id}]{self.name} Hand: {len(self.hand)}, {len(self.move)}")
             self.addCardMove(0)
-            return
+            return True
         if move.nCards == 4 and self.quads != {}:
             for i in self.quads:
                 if self.hand[self.quads[i][0]].rank * 4 > move.rank:
                     for _ in range(4):
                         self.addCardMove(i)
-                    return
+                    return True
         if move.nCards == 3 and self.trips != {}:
             for i in self.trips:
                 if self.hand[self.trips[i][0]].rank * 3 > move.rank:
                     for _ in range(3):
                         self.addCardMove(i)
-                    return
+                    return True
         if move.nCards == 2 and self.pairs != {}:
             for i in self.pairs:
                 if self.hand[self.pairs[i][0]].rank * 2 > move.rank:
                     for _ in range(2):
                         self.addCardMove(i)
-                    return
+                    return True
         if move.nCards == 1:
             for i in range(len(self.hand)):
                 if self.hand[i].rank > move.rank:
                     self.addCardMove(i)
-                    return
+                    return True
         if self.kingHearts != -1:
             self.addCardMove(self.kingHearts)
-            return
+            return True
         if self.tripSix != -1:
             for _ in range(3):
                 self.addCardMove(self.tripSix)
-            return
+            return True
+        return False
 
     def __groupHand(self):
         self.__pairs = {}

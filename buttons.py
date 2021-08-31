@@ -86,3 +86,25 @@ class CardButton():
                 return True
         self.over = False
         return False
+
+
+class PlainText():
+    def __init__(self, win, x, y, size, text='', center=False):
+        self.window = win
+        self.x = x
+        self.y = y
+        self.text = text
+        self.center = center
+        self.size = int(size * 0.8)
+        font = load_text(self.size)
+        txt = font.render(self.text, 1, (0, 0, 0))
+        self.width = txt.get_width()
+        self.height = txt.get_height()
+
+    def draw(self):
+        font = load_text(self.size)
+        text = font.render(self.text, 1, BLACK)
+        if self.center:
+            self.window.blit(text, (self.x - self.width//2, self.y))
+        else:
+            self.window.blit(text, (self.x, self.y))
