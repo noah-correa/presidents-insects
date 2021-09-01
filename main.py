@@ -198,6 +198,11 @@ def game_loop(game: Game) -> None:
     b_pass = Button(window, WINDOW_W - 100, WINDOW_H - 50, 50, 'Pass')
     # print(game.players)
     
+
+    # ADDED BOT DELAY
+    # 0 for delay, -1 for no delay
+    botDelay = 0
+
     run = True
     screen = None
     while run:
@@ -231,18 +236,25 @@ def game_loop(game: Game) -> None:
         isValidMove = False
         if currPlayer.isBot:
             # Check bot move is valid
-            botMove = currPlayer.botPlayTurn(topMove)
-            isValidMove = game.validMove(botMove)
-            if isValidMove:
-                game.addTopMove(botMove)
-                # Bot played valid move
-                nextTurn = True
-            else:
-                # Bot played invalid move
-                print("ERROR: Bot move invalid")
-                print(f"Bot tried to play: {botMove}")
+
+            isValidMove = None
+            if botDelay == 50 or botDelay == -1:
+                botMove = currPlayer.botPlayTurn(topMove)
+                isValidMove = game.validMove(botMove)
+                botDelay = 0 if botDelay != -1 else -1
+
+            if isValidMove is not None:
+                if isValidMove:
+                    game.addTopMove(botMove)
+                    # Bot played valid move
+                    nextTurn = True
+                else:
+                    # Bot played invalid move
+                    print("ERROR: Bot move invalid")
+                    print(f"Bot tried to play: {botMove}")
 
         else:
+            botDelay = 0 if botDelay != -1 else -1
             # Draw Pygame
             p_hand, p_move = draw_player_cards(pos, currPlayer)
             # Loop through events
@@ -284,6 +296,9 @@ def game_loop(game: Game) -> None:
                     for i, card in enumerate(p_move):
                         if card.isOver(pos):
                             currPlayer.addCardMoveHand(card.getCard())
+
+        if botDelay >= 0:
+            botDelay += 1
 
         if nextTurn:
             game.nextTurn()
