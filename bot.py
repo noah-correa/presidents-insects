@@ -16,6 +16,10 @@ class Bot(Player):
         Bot.__idBot += 1
         return Bot.__idBot
 
+    @classmethod
+    def reset_id(cls):
+        Bot.__idBot = 0
+
     def __init__(self):
         self.__idBot = Bot.generate_idBot()
         self.__pairs = {}
@@ -72,7 +76,7 @@ class Bot(Player):
                 if card.value == "3" and card.suit == "Clubs":
                     self.addCardMove(i)
                     return True
-            print(f"[{self.id}]{self.name} Hand: {len(self.hand)}, {len(self.move)}")
+            # print(f"[{self.id}]{self.name} Hand: {len(self.hand)}, {len(self.move)}")
             self.addCardMove(0)
             return True
         if move.nCards == 4 and self.quads != {}:

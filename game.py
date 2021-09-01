@@ -31,6 +31,8 @@ class Game(object):
         self.__topMove: Move = Move(0)
         self.__over = False
 
+        Player.reset_id()
+        Bot.reset_id()
         self.addPlayers()
         # self.game_loop()
 

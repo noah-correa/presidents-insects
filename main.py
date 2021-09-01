@@ -107,7 +107,6 @@ def singleplayer_number():
                     break
                 if b_5.isOver(pos):
                     run = False
-                    loading_screen(5)
                     screen = loading_screen, 5
                     break
                 if b_6.isOver(pos):
@@ -300,7 +299,7 @@ def draw_top_pile(top: Move):
     # print(top)
     if top.nCards == 0:
         return
-    x, y = WINDOW_W//2 - 115//2*top.nCards, WINDOW_H//2 - 176//2
+    x, y = WINDOW_W//2 - (115 + 115//2*(top.nCards-1))//2, WINDOW_H//2 - 176//2
     for i, card in enumerate(top.cards):
         window.blit(card.img, (x + 115//2*i, y))
 

@@ -14,6 +14,10 @@ class Player():
     def generate_id(cls):
         Player.__id += 1
         return Player.__id
+    
+    @classmethod
+    def reset_id(cls):
+        Player.__id = 0
 
     def __init__(self, name: str):
         self.__id: int = Player.generate_id()
