@@ -6,11 +6,11 @@ import sys
 import pygame
 from time import sleep
 
-from game import Game
-from move import Move
-from player import Player
-from bot import Bot
-from buttons import WINDOW_H, WINDOW_W, BG_COLOUR, Button, load_text, text_objects, BLACK, CardButton, PlainText
+from src.game import Game
+from src.move import Move
+from src.player import Player
+from src.bot import Bot
+from src.buttons import WINDOW_H, WINDOW_W, BG_COLOUR, Button, load_text, text_objects, BLACK, CardButton, PlainText
 
 
 

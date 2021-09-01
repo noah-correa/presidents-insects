@@ -3,8 +3,8 @@ player.py for Presidents and Insects Python Card Game
 Noah Correa
 """
 
-from move import Move
-from card import Card
+from src.move import Move
+from src.card import Card
 
 class Player():
 

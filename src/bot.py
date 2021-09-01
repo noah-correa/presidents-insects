@@ -5,7 +5,7 @@ Noah Correa
 
 from time import sleep
 
-from player import Player
+from src.player import Player
 
 class Bot(Player):
 

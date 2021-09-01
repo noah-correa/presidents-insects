@@ -5,7 +5,7 @@ Noah Correa
 
 import random
 
-from card import Card
+from src.card import Card
 
 class Deck(object):
     def __init__(self):

@@ -5,10 +5,10 @@ Noah Correa
 import sys
 from random import sample
 
-from deck import Deck
-from player import Player
-from bot import Bot
-from move import Move
+from src.deck import Deck
+from src.player import Player
+from src.bot import Bot
+from src.move import Move
 
 
 ROLES = ['President', 'Vice-President', 'Citizen', 'Insect', 'Giga-Insect']
