@@ -19,7 +19,7 @@ class Game(object):
         self.__nTotal: int = total
         self.__nPlayers: int = players
         self.__nBots: int = total - players
-        self.__players: dict = {}
+        self.__players: dict[Player] = {}
         self.__roles: dict = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
         self.__nHand: int = 52//total
         self.__nSpare: int = 52%total
@@ -127,7 +127,7 @@ class Game(object):
         for i in range(self.nPlayers):
             new_player = Player(f"Player {i+1}")
             self.players[new_player.id] = new_player
-        self.__updateRoles()
+        self.__updatePlayerRoles()
 
     # Deals hand to all players
     def __dealHands(self) -> None:
@@ -151,15 +151,6 @@ class Game(object):
                     if i == 2:
                         self.players[self.roles[ROLES[1]]].addCardHand(card)
 
-    # Updates roles dict in game class
-    def __updateRoles(self) -> None:
-        self.__roles = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
-        for i in self.players:
-            if self.players[i].role == ROLES[2]:
-                self.roles[self.players[i].role].append(i)
-            else:
-                self.roles[self.players[i].role] = i
-
     # Returns player id with 3 of clubs
     def __findFirstTurn(self) -> None:
         for i in self.players:
@@ -167,20 +158,42 @@ class Game(object):
                 if card.value == "3" and card.suit == "Clubs":
                     return i
         return -1
+    
+    # TODO: Combine and fix updateRoles and updatePlayerRoles
+    # Updates roles dict in game class
+    # def __updateRoles(self) -> None:
+    #     self.__roles = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
+    #     for player in self.players.values():
+    #         if player.role == ROLES[2]:
+    #             self.roles[player.role].append(player.id)
+    #         else:
+    #             self.roles[player.role] = player.id
 
-    def __updatePlayerRole(self) -> None:
-        self.winners.append(self.__findLastPlayer())
-        for i in range(self.nTotal):
-            if i == 2:
-                for j in range(self.nTotal - 4):
-                    self.players[self.winners[i+j]].setRole(i)
+
+    def __updatePlayerRoles(self) -> None:
+        # if len(self.winners) != self.nTotal:
+        if self.gameNumber != 0:
+            self.winners.append(self.__findLastPlayer())
+            # print(f"winners order: {self.winners}")
+            self.players[self.winners[0]].setRole(ROLES[0])
+            self.players[self.winners[1]].setRole(ROLES[1])
+            self.players[self.winners[-2]].setRole(ROLES[-2])
+            self.players[self.winners[-1]].setRole(ROLES[-1])
+            for pid in self.winners[2:-2]:
+                self.players[pid].setRole(ROLES[2])
+        
+        self.__roles[ROLES[2]] = []
+        for player in self.players.values():
+            if player.role == ROLES[2]:
+                self.roles[player.role].append(player.id)
             else:
-                self.players[self.winners[i]].setRole(i)
+                self.roles[player.role] = player.id
+
 
     def __findLastPlayer(self) -> int:
-        for i in self.players:
-            if self.players[i].nCards != 0:
-                return i
+        for player in self.players.values():
+            if player.nCards != 0:
+                return player.id
         return 0
 
     ### TERMINAL VERSION FUNCTION
@@ -205,18 +218,28 @@ class Game(object):
 
     # Sets up for a new game (new deal of hands)
     def newGame(self) -> None:
+        if self.gameNumber != 0:
+            self.__updatePlayerRoles()
         self.__resetPassed()
         self.__resetHands()
         self.__resetDeck()
-        self.__dealHands()
+            # self.__updateRoles()
+        self.__dealHands()    
         if self.gameNumber != 0:
-            self.players[self.roles[ROLES[0]]].addTwo(self.players[self.roles[ROLES[4]]].highTwo())
-            self.players[self.roles[ROLES[4]]].addTwo(self.players[self.roles[ROLES[0]]].lowTwo())
-            self.players[self.roles[ROLES[1]]].addCardHand(self.players[self.roles[ROLES[3]]].highOne())
-            self.players[self.roles[ROLES[3]]].addCardHand(self.players[self.roles[ROLES[1]]].lowOne())
-        else:
-            self.__currPlayer = self.__findFirstTurn()
-
+            highTwo = self.players[self.roles[ROLES[4]]].highTwo()
+            lowTwo = self.players[self.roles[ROLES[0]]].lowTwo()
+            highOne = self.players[self.roles[ROLES[3]]].highOne()
+            lowOne = self.players[self.roles[ROLES[1]]].lowOne()
+            # print(f"[{self.roles[ROLES[4]]}] gave high 2: {highTwo} to [{self.roles[ROLES[0]]}]")
+            # print(f"[{self.roles[ROLES[0]]}] gave low 2: {lowTwo} to [{self.roles[ROLES[4]]}]")
+            # print(f"[{self.roles[ROLES[3]]}] gave high 1: {highOne} to [{self.roles[ROLES[1]]}]")
+            # print(f"[{self.roles[ROLES[1]]}] gave low 1: {lowOne} to [{self.roles[ROLES[3]]}]")
+            self.players[self.roles[ROLES[0]]].addTwo(highTwo)
+            self.players[self.roles[ROLES[4]]].addTwo(lowTwo)
+            self.players[self.roles[ROLES[1]]].addCardHand(highOne)
+            self.players[self.roles[ROLES[3]]].addCardHand(lowOne)
+        # else:
+        self.__currPlayer = self.__findFirstTurn()
         self.__gameNumber += 1
         self.__roundNumber = 0
         self.__winners = []
@@ -233,35 +256,37 @@ class Game(object):
     # Finds id of player of next turn
     def nextTurnPlayer(self) -> int:
         pid = self.currPlayer
-        print(f"-->current player = {pid}")
+        # print(f"-->current player = {pid}")
+
+        # Checks if someone who didnt play the last move hasnt passed and has cards
         for _ in range(1, self.nTotal):
             pid += 1
             if pid > self.nTotal:
                 pid -= self.nTotal
-            print(f"--> Testing pid = {pid} ({self.players[pid].name})")
-            # print(self.players[pid])
-            print(f"not {self.players[pid].passed} and {pid} not in {self.winners} and {pid} != {self.topMove.pid} and {self.players[pid].nCards}!=0")
-            if not self.players[pid].passed and pid not in self.winners and pid != self.topMove.pid and self.players[pid].nCards != 0:
-                print(f"--> Valid player found: {pid}")
+            # print(f"--> Testing pid = {pid} ({self.players[pid].name})")
+            if not self.players[pid].passed and self.players[pid].nCards != 0 and pid != self.topMove.pid:
+                # print(f"--> Valid player found: {pid}")
                 return pid
+        # print(f"\t--> No valid player found, next round")
+        return 0
 
-        # return self.nextDefaultPlayer()
-        print(f"[{pid}] {self.players[pid]}")
-        if self.players[pid].nCards == 0:
-            print(f"{pid} has no cards")
-            return self.nextDefaultPlayer()
-        else:
-            print("no player")
-            return 0
 
     # Finds id of next player if current player is now out
     def nextDefaultPlayer(self) -> int:
-        pid = self.currPlayer
+
+        if self.players[self.topMove.pid].nCards != 0:
+            return self.topMove.pid
+
+        pid = self.topMove.pid
+        # print(f"\t--> current player = {pid}")
         for _ in range(1, self.nTotal):
             pid += 1
             if pid > self.nTotal:
                 pid -= self.nTotal
+            
+            # print(f"\t--> testing player = {pid} ({self.players[pid].nCards} cards left)")
             if self.players[pid].nCards != 0:
+                # print(f"\t--> returning {pid}")
                 return pid
         return 0
 
@@ -277,9 +302,13 @@ class Game(object):
             if move.pid == 0:
                 return False
             if self.roundNumber == 1:
+                if move.cards is None:
+                    return False
                 for card in move.cards:
                     if card.value == "3" and card.suit == "Clubs":
                         return True
+                return False
+            if move.passed:
                 return False
             return True
         if move.passed:
@@ -294,28 +323,28 @@ class Game(object):
 
     # Adds the new move to top of pile
     def addTopMove(self, move) -> None:
-        print(move)
-        if move.passed:
-            return
-        self.__topMove = move
+        # print(f"\t{move}")
+        if not move.passed:
+            self.__topMove = move
 
     # Updates Game object for next turn
     def nextTurn(self) -> None:
         print(f"==== Game {self.gameNumber}, Round {self.roundNumber}, Turn {self.turnNumber} ====")
-        for player in self.players.values():
-            print(f"{player.role} {player.name} has {player.nCards} cards remaining")
+        print(self.topMove)
+        # for player in self.players.values():
+        #     print(f"{player.role} {player.name} has {player.nCards} cards remaining at the start of the round")
 
         # Check if player who played move is not out
         if self.players[self.currPlayer].nCards == 0:
             self.winners.append(self.currPlayer)
-            print(f"==> {self.players[self.currPlayer].name} is now out in winners = {self.winners}")
+            # print(f"==> {self.players[self.currPlayer].name} is now out in winners = {self.winners}")
 
         # Check if only 1 player remains
         if len(self.winners) == self.nTotal - 1:
-            print("==> Only 1 player left")
+            # print("==> Only 1 player left, starting next game")
             # Set game to be over
-            self.__updatePlayerRole()
-            self.__updateRoles()
+            # self.__updatePlayerRoles()
+            # self.__updateRoles()
             self.__over = True
             self.newGame()
             return
@@ -325,12 +354,12 @@ class Game(object):
         next_pid = self.nextTurnPlayer()
         # Check if no next player
         if next_pid == 0:
-            print("==> no next player")
+            # print("==> no next player")
             # If no next player, start next round
-            self.__currPlayer = self.topMove.pid
+            self.__currPlayer = self.nextDefaultPlayer()
             self.newRound()
         else:
-            print(f"==>next player: {self.players[next_pid]}")
+            # print(f"==>next player: {self.players[next_pid]}")
             # Otherwise, go to next player
             self.__currPlayer = next_pid
             self.__turnNumber += 1
@@ -433,8 +462,7 @@ class Game(object):
                 print(f"==> {self.players[self.currPlayer].name} is now out in winners = {self.winners}")
                 self.winners.append(self.currPlayer)
             if len(self.winners) == self.nTotal - 1:
-                self.__updatePlayerRole()
-                self.__updateRoles()
+
                 self.newGame()
                 continue
 

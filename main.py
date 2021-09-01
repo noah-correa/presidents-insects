@@ -24,6 +24,14 @@ pygame.display.set_icon(pygame.image.load('images/cockroach.png'))
 pygame.display.update()
 
 
+def run_screen(f):
+    if f is None:
+        return
+    elif callable(f):
+        f()
+    else:
+        f[0](f[1])
+
 # Main menu screen
 def game_intro():
 
@@ -31,21 +39,29 @@ def game_intro():
     b_rules = Button(window, WINDOW_W//2+100, 2*WINDOW_H//3, 100, 'Rules')
 
     run = True
+    screen = None
     while run:
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                quit_game()
+                run = False
+                screen = quit_game
+                break
+                # quit_game()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b_play.isOver(pos):
-                    singleplayer_number()
+                    # singleplayer_number()
                     run = False
+                    screen = singleplayer_number
+                    break
                 if b_rules.isOver(pos):
-                    rules()
+                    # rules()
                     run = False
-            if event.type == pygame.MOUSEMOTION:
-                b_play.draw(pos)
-                b_rules.draw(pos)
+                    screen = rules
+                    break
+            # if event.type == pygame.MOUSEMOTION:
+            #     b_play.draw(pos)
+            #     b_rules.draw(pos)
 
 
         window.fill(BG_COLOUR)
@@ -63,7 +79,7 @@ def game_intro():
         pygame.display.update()
         pygame.time.delay(15)
 
-    quit_game()
+    run_screen(screen)
 
 # Choose total number of players screen
 def singleplayer_number():
@@ -74,30 +90,39 @@ def singleplayer_number():
     b_7 = Button(window, WINDOW_W // 2 + 100, WINDOW_H // 2, 100, '7')
 
     run = True
+    screen = None
     while run:
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+                screen = quit_game
+                break
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b_back.isOver(pos):
                     run = False
-                    game_intro()
+                    # game_intro()
+                    screen = game_intro
+                    break
                 if b_5.isOver(pos):
                     run = False
                     loading_screen(5)
+                    screen = loading_screen, 5
+                    break
                 if b_6.isOver(pos):
                     run = False
-                    loading_screen(6)
+                    screen = loading_screen, 6
+                    break
                 if b_7.isOver(pos):
                     run = False
-                    loading_screen(7)
-            if event.type == pygame.MOUSEMOTION:
-                b_back.draw(pos)
-                b_5.draw(pos)
-                b_6.draw(pos)
-                b_7.draw(pos)
+                    screen = loading_screen, 7
+                    break
+            # if event.type == pygame.MOUSEMOTION:
+            #     b_back.draw(pos)
+            #     b_5.draw(pos)
+            #     b_6.draw(pos)
+            #     b_7.draw(pos)
 
         window.fill(BG_COLOUR)
 
@@ -114,7 +139,7 @@ def singleplayer_number():
         pygame.display.update()
         pygame.time.delay(15)
 
-    quit_game()
+    run_screen(screen)
 
 
 
@@ -125,18 +150,20 @@ def rules():
     b_back = Button(window, 0, 0, 50, 'Back')
 
     run = True
+    screen = None
     while run:
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+                screen = quit_game
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if b_back.isOver(pos):
                     run = False
-                    game_intro()
+                    screen = game_intro
 
-            if event.type == pygame.MOUSEMOTION:
-                b_back.draw(pos)
+            # if event.type == pygame.MOUSEMOTION:
+                # b_back.draw(pos)
 
         window.fill(BG_COLOUR)
         # TODO: Render rules
@@ -145,7 +172,7 @@ def rules():
         pygame.display.update()
         pygame.time.delay(15)
 
-    quit_game()
+    run_screen(screen)
 
 
 
@@ -160,7 +187,8 @@ def loading_screen(total: int) -> None:
     game = Game(1, total)
     game.newGame()
     pygame.time.delay(500)
-    game_loop(game)
+    # game_loop(game)
+    run_screen((game_loop, game))
 
 
 
@@ -169,9 +197,10 @@ def game_loop(game: Game) -> None:
     b_back = Button(window, 0, 0, 50, 'Back')
     b_play = Button(window, WINDOW_W - 100, WINDOW_H - 110, 50, 'Play')
     b_pass = Button(window, WINDOW_W - 100, WINDOW_H - 50, 50, 'Pass')
-
+    # print(game.players)
     
     run = True
+    screen = None
     while run:
         # Draw all default stuff
         window.fill(BG_COLOUR)
@@ -222,13 +251,15 @@ def game_loop(game: Game) -> None:
                 # Check if game quit
                 if event.type == pygame.QUIT:
                     run = False
+                    screen = quit_game
+                    break
 
                 # Check if mouse clicked
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     # Check if back button clicked
                     if b_back.isOver(pos):
                         run = False
-                        game_intro()
+                        screen = game_intro
                         break
                     
                     playerMove = None
@@ -255,22 +286,13 @@ def game_loop(game: Game) -> None:
                         if card.isOver(pos):
                             currPlayer.addCardMoveHand(card.getCard())
 
-                # Check if cards are hovered
-                # if event.type == pygame.MOUSEMOTION:
-                #     b_back.draw(pos)
-                    # draw_player_cards(pos, currPlayer)
-                    # Check which card cursor is over
-                    # for i, card in enumerate(p_hand):
-                    #     if card.isOver(pos):
-                    #         draw_player_cards(pos, currPlayer)
-
         if nextTurn:
             game.nextTurn()
 
         pygame.display.update()
         pygame.time.delay(15)
 
-    quit_game()
+    run_screen(screen)
 
 
 # Draw top pile card(s)
