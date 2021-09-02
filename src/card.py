@@ -12,8 +12,8 @@ class Card():
         self.__value = value
         self.__suit = suit
         self.__kingHearts = self.__isKingHearts()
-        self.__img = pygame.transform.scale(pygame.image.load("images/" + self.value + self.suit[0] + ".png"), (115, 176))
-        self.__back = pygame.image.load("images/red_back.png")
+        self.__img = pygame.transform.scale(pygame.image.load("resources/cards/" + self.value + self.suit[0] + ".png"), (115, 176))
+        self.__back = pygame.image.load("resources/cards/red_back.png")
 
     def __repr__(self):
         return f"<{self.__value} of {self.__suit} ({self.__rank})>"

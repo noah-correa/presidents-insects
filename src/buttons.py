@@ -1,7 +1,7 @@
 import pygame
 
-WINDOW_W = 1600
-WINDOW_H = 900
+from src.card import Card
+
 BG_COLOUR = (0, 71, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -16,95 +16,109 @@ def text_objects(text, font, colour):
 def load_text(size) -> pygame.font:
     return pygame.font.Font('freesansbold.ttf', size)
 
-class Button():
-    def __init__(self, win, x, y, size, text=''):
-        self.window = win
-        self.over = False
-        self.x = x
-        self.y = y
+class TextButton():
+    def __init__(self, text, size, position, callback, params=None, center=False):
         self.text = text
-        self.size = int(size * 0.8)
+        self.size = size
         font = load_text(self.size)
-        txt = font.render(self.text, 1, (0, 0, 0))
-        self.width = txt.get_width()
-        self.height = txt.get_height()
+        txt = font.render(self.text, 1, BLACK)
+        self.rect = txt.get_rect(topleft=position)
+        if center:
+            self.rect = txt.get_rect(center=position)
+        self.callback = callback
+        self.params = params
 
-    def draw(self, pos=None):
+    def draw(self, window, pos=None):
+        font = load_text(self.size)
+        if pos is not None and self.rect.collidepoint(pos):
+            text = font.render(self.text, 1, WHITE)
+            window.blit(text, self.rect)
+        else:
+            text = font.render(self.text, 1, BLACK)
+            window.blit(text, self.rect)
 
-        if self.text != '':
-            font = load_text(self.size)
-            if pos is not None:
-                self.isOver(pos)
-            if self.over:
-                # font = load_text(int(self.size * 1.2))
-                text = font.render(self.text, 1, WHITE)
-                # win.blit(text, (self.x + self.width//2 - text.get_width()//2, self.y + self.height//2 - text.get_height()//2))
-                # win.blit(text, (self.x, self.y))
-            else:
-                text = font.render(self.text, 1, BLACK)
-            self.window.blit(text, (self.x, self.y))
-
-    def isOver(self, pos):
-        #Pos is the mouse position or a tuple of (x,y) coordinates
-        if pos[0] > self.x and pos[0] < self.x + self.width:
-            if pos[1] > self.y and pos[1] < self.y + self.height:
-                self.over = True
-                return True
-        self.over = False
-        return False
+    def onClick(self, event):
+        if event.button == 1:
+            if self.rect.collidepoint(event.pos):
+                if self.callback is None:
+                    return True
+                if self.params is None:
+                    self.callback()
+                    return False
+                else:
+                    self.callback(self.params)
+                    return False
 
 
 class CardButton():
-    def __init__(self, win, card, x, y):
-        self.window = win
+    def __init__(self, card: Card, position, callback=None, params=None):
         self.card = card
-        self.x = x
-        self.y = y
-        self.w = 115
-        self.h = 176
-        self.over = 0
+        self.rect = card.img.get_rect(topleft=position)
+        self.callback = callback
+        self.params = params
 
     def getCard(self):
         return self.card
 
-    def draw(self, pos=None):
+    def draw(self, window, pos=None):
         #Call this method to draw the button on the screen
-        if pos is not None:
-            self.isOver(pos)
-        if self.over:
-            # pygame.draw.rect(win, YELLOW, (self.x - 2, self.y - 2, self.w + 4, self.h + 4), 0)
-            self.window.blit(self.card.img, (self.x, self.y - 176//8))
+        if pos is not None and self.rect.collidepoint(pos):
+            window.blit(self.card.img, (self.rect[0], self.rect[1] - 176//8))
         else:
-            self.window.blit(self.card.img, (self.x, self.y))
+            window.blit(self.card.img, self.rect)
+
+    def onClick(self, event):
+        if event.button == 1:
+            if self.rect.collidepoint(event.pos):
+                if self.callback is None:
+                    return True
+                if self.params is None:
+                    self.callback()
+                    return False
+                else:
+                    self.callback(self.params)
+                    return False
 
 
-    def isOver(self, pos):
-        #Pos is the mouse position or a tuple of (x,y) coordinates
-        if pos[0] > self.x and pos[0] < self.x + self.w:
-            if pos[1] > self.y and pos[1] < self.y + self.h:
-                self.over = True
-                return True
-        self.over = False
-        return False
+class ImageButton():
+    def __init__(self, image, size, position, callback, params=None, hover=None):
+        self.image = pygame.transform.scale(pygame.image.load(image), size)
+        self.hover = pygame.transform.scale(pygame.image.load(hover), size)
+        self.size = size
+        self.rect = self.image.get_rect(topleft=position)
+        self.callback = callback
+        self.params = params
+
+    def draw(self, window, pos=None):
+        if pos is not None and self.rect.collidepoint(pos) and self.hover is not None:
+            window.blit(self.hover, self.rect)
+        else:
+            window.blit(self.image, self.rect)
+
+    def onClick(self, event):
+        if event.button == 1:
+            if self.rect.collidepoint(event.pos):
+                if self.callback is None:
+                    return True
+                if self.params is None:
+                    self.callback()
+                    return False
+                else:
+                    self.callback(self.params)
+                    return False
 
 
 class PlainText():
-    def __init__(self, win, x, y, size, text='', center=False):
-        self.window = win
-        self.x = x
-        self.y = y
+    def __init__(self, text, size, position, center=False):
         self.text = text
-        self.center = center
-        self.size = int(size * 0.8)
+        self.size = size
         font = load_text(self.size)
-        txt = font.render(self.text, 1, (0, 0, 0))
-        self.width = txt.get_width()
-        self.height = txt.get_height()
+        txt = font.render(self.text, 1, BLACK)
+        self.rect = txt.get_rect(topleft=position)
+        if center:
+            self.rect = txt.get_rect(center=position)
 
-    def draw(self):
+    def draw(self, window):
         font = load_text(self.size)
         text = font.render(self.text, 1, BLACK)
-        if self.center:
-            self.window.blit(text, (self.x - self.width//2, self.y))
-        else:
-            self.window.blit(text, (self.x, self.y))
+        window.blit(text, self.rect)

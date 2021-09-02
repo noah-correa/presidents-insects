@@ -23,8 +23,8 @@ class Player():
         self.__id: int = Player.generate_id()
         self.__name: str = name
         self.__role: str = "Citizen"
-        self.__hand: [Card] = []
-        self.__move: [Card] = []
+        self.__hand: list[Card] = []
+        self.__move: list[Card] = []
         self.__moveRank: int = 0
         self.__passed: int = 0
 
@@ -73,7 +73,7 @@ class Player():
     def setRole(self, role: str):
         self.__role = role
 
-    def setHand(self, hand: [Card]):
+    def setHand(self, hand: list[Card]):
         self.__hand = hand
         self.sortHand()
 
@@ -95,7 +95,7 @@ class Player():
             ret += f"{i+1}. {str(self.move[i])}\n"
         print(ret)
 
-    def addInvalidMove(self, move: [Card]):
+    def addInvalidMove(self, move: list[Card]):
         if not move.passed:
             self.hand.extend(move.cards)
             self.sortHand()
@@ -178,7 +178,7 @@ class Player():
         return ret
 
     # Adds two cards to players hand
-    def addTwo(self, cards: [Card]):
+    def addTwo(self, cards: list[Card]):
         for card in cards:
             self.addCardHand(card)
 
@@ -188,7 +188,7 @@ class Player():
             self.__moveRank = 62
 
     # Helper function to determine if cards in given list is triple sixes
-    def __isTripleSix(self, cards: [Card]):
+    def __isTripleSix(self, cards: list[Card]):
         if len(cards) == 3:
             for card in cards:
                 if card.value == "6":
