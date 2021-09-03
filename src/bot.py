@@ -3,7 +3,7 @@ bot.py for Presidents and Insects Python Card Game
 Noah Correa
 """
 
-from time import sleep
+# from time import sleep
 
 from src.player import Player
 

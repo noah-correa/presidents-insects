@@ -5,68 +5,54 @@ Noah Correa
 import sys
 import pygame
 from time import sleep
+from typing import Union
 
+from src.card import Card, CARD_W, CARD_H
 from src.game import Game
 from src.move import Move
 from src.player import Player
 from src.bot import Bot
-from src.buttons import TextButton, load_text, text_objects, CardButton, ImageButton, PlainText, BG_COLOUR, BLACK, WHITE, YELLOW
+from src.buttons import TextButton, CardButton, ImageButton, PlainText, BG_COLOUR, BLACK, WHITE, YELLOW
 
 pygame.init()
 
 window = pygame.display.set_mode((1600, 900))
-# window = pygame.display.set_mode()
 WINDOW_W, WINDOW_H = pygame.display.get_window_size()
-# print(type(window))
 window.fill(BG_COLOUR)
 pygame.display.set_caption("Presidents and Insects")
 pygame.display.set_icon(pygame.image.load('resources/icons/cockroach.png'))
 pygame.display.update()
 
 
-# def run_screen(f):
-#     if f is None:
-#         return
-#     elif callable(f):
-#         f()
-#     else:
-#         f[0](f[1])
 
 # Main menu screen
 def game_intro():
-    b_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings, hover='resources/icons/menu_icon_hover.png')
-    b_play = TextButton('Play', 100, (WINDOW_W//2-300, 2*WINDOW_H//3), singleplayer_number)
-    b_rules = TextButton('Rules', 100, (WINDOW_W//2+100, 2*WINDOW_H//3), rules)
+    tb_sp = TextButton('Singleplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3), singleplayer_number, align='c', font='H2')
+    tb_mp = TextButton('Multiplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3+60), None, align='c', font='H2')
+    tb_settings = TextButton('Settings', 60, (WINDOW_W//2, 2*WINDOW_H//3+60*2), settings, align='c', font='H2')
+    pt_pai = PlainText('Presidents and Insects', 100, (WINDOW_W//2,WINDOW_H//2), align='c', font='H1')
+    main_image = pygame.transform.scale(pygame.image.load("resources/icons/cockroach.png"), (151*2, 191*2))
 
     run = True
-    screen = None
     while run:
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                b_settings.onClick(event)
-                b_play.onClick(event)
-                b_rules.onClick(event)
+                tb_settings.onClick(event)
+                tb_sp.onClick(event)
 
         window.fill(BG_COLOUR)
-        text = load_text(100)
-        title, title_rect = text_objects("Presidents and Insects", text, BLACK)
-        title_rect.center = ((WINDOW_W // 2), (WINDOW_H // 2))
-        window.blit(title, title_rect)
-
-        main_image = pygame.transform.scale(pygame.image.load("resources/icons/cockroach.png"), (151*2, 191*2))
         window.blit(main_image, (WINDOW_W // 2 - 151, WINDOW_H // 3 - 275))
-
-        b_settings.draw(window, pos)
-        b_play.draw(window, pos)
-        b_rules.draw(window, pos)
+        pt_pai.draw(window)
+        tb_settings.draw(window, pos)
+        tb_sp.draw(window, pos)
+        tb_mp.draw(window, pos)
 
         pygame.display.update()
         pygame.time.delay(15)
 
-    # run_screen(screen)
 
 # Choose total number of players screen
 def singleplayer_number():
@@ -75,6 +61,7 @@ def singleplayer_number():
     b_5 = TextButton('5', 100, (WINDOW_W//2-200,WINDOW_H//2), loading_screen, params=5)
     b_6 = TextButton('6', 100, (WINDOW_W//2-50,WINDOW_H//2), loading_screen, params=6)
     b_7 = TextButton('7', 100, (WINDOW_W//2+100,WINDOW_H//2), loading_screen, params=7)
+    pt_numPlayers = PlainText('Choose total number of players', 50, (WINDOW_W//2,WINDOW_H//3), align='c', font='H2')
 
     run = True
     while run:
@@ -89,10 +76,7 @@ def singleplayer_number():
                 b_7.onClick(event)
 
         window.fill(BG_COLOUR)
-        text = load_text(50)
-        title, title_rect = text_objects("Choose total number of players", text, BLACK)
-        title_rect.center = ((WINDOW_W // 2), (WINDOW_H // 3))
-        window.blit(title, title_rect)
+        pt_numPlayers.draw(window)
 
         b_back.draw(window, pos)
         b_5.draw(window, pos)
@@ -102,13 +86,12 @@ def singleplayer_number():
         pygame.display.update()
         pygame.time.delay(15)
 
-    # run_screen(screen)
 
 
 def settings():
     b_back = TextButton('Back', 50, (0, 0), None)
-    b_fs = TextButton('Toggle Fullscreen', 50, (WINDOW_W//2,WINDOW_H//2-30), None, center=True)
-    b_quit = TextButton('Quit Game', 50, (WINDOW_W//2,WINDOW_H//2+30), quit_game, center=True)
+    b_fs = TextButton('Toggle Fullscreen', 50, (WINDOW_W//2,WINDOW_H//2-30), None, align='c')
+    b_quit = TextButton('Quit Game', 50, (WINDOW_W//2,WINDOW_H//2+30), quit_game, align='c')
 
     run = True
     screen = None
@@ -166,10 +149,8 @@ def rules():
 
 def loading_screen(total: int) -> None:
     window.fill(BG_COLOUR)
-    text = load_text(50)
-    title, title_rect = text_objects("LOADING", text, BLACK)
-    title_rect.center = ((WINDOW_W // 2), (WINDOW_H // 3))
-    window.blit(title, title_rect)
+    pt_loading = PlainText('LOADING', 50, (WINDOW_W//2,WINDOW_H//2), align='c')
+    pt_loading.draw(window)
     pygame.display.update()
     pygame.time.delay(500)
     game = Game(1, total)
@@ -183,9 +164,10 @@ def loading_screen(total: int) -> None:
 # Game screen
 def game_loop(game: Game) -> None:
     sound_playCard = pygame.mixer.Sound('resources/audio/play_card.wav')
+    sound_playCard.set_volume(0.1)
     b_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings, hover='resources/icons/menu_icon_hover.png')
-    b_play = TextButton('Play', 50, (WINDOW_W-100,WINDOW_H-110), None)
-    b_pass = TextButton('Pass', 50, (WINDOW_W-100, WINDOW_H-50), None)
+    b_play = TextButton('Play', 50, (WINDOW_W,WINDOW_H-110), None, align='br')
+    b_pass = TextButton('Pass', 50, (WINDOW_W, WINDOW_H-50), None, align='br')
 
     # ADDED BOT DELAY
     # 0 for delay, -1 for no delay
@@ -195,9 +177,9 @@ def game_loop(game: Game) -> None:
     while run:
         # Draw all default stuff
         window.fill(BG_COLOUR)
-        game_round_turn_text = PlainText(f"Game {game.gameNumber} Round {game.roundNumber} Turn {game.turnNumber}", 40, (WINDOW_W//2, 0), center=True)
+        game_round_turn_text = PlainText(f"Game {game.gameNumber} Round {game.roundNumber} Turn {game.turnNumber}", 40, (WINDOW_W//2, 0), align='c')
         game_round_turn_text.draw(window)
-        nCards_text = PlainText(game.getPlayersNumCards(), 40, (WINDOW_W//2, 60), center=True)
+        nCards_text = PlainText(game.getPlayersNumCards(), 40, (WINDOW_W//2, 60), align='c')
         nCards_text.draw(window)
 
         pos = pygame.mouse.get_pos()
@@ -210,11 +192,11 @@ def game_loop(game: Game) -> None:
         nextTurn = False
 
         # Game logic
-        currPlayer: Player = game.getCurrentPlayer()
+        currPlayer: Union[Player, Bot] = game.getCurrentPlayer()
         currPlayerText = f"{currPlayer.name}'s turn"
         if not currPlayer.isBot:
             currPlayerText = "Your turn"
-        cp_text = PlainText(currPlayerText, 40, (WINDOW_W//2, 30), center=True)
+        cp_text = PlainText(currPlayerText, 40, (WINDOW_W//2, 30), align='c')
         cp_text.draw(window)
 
         # Check if bot
@@ -231,7 +213,8 @@ def game_loop(game: Game) -> None:
             if isValidMove is not None:
                 if isValidMove:
                     game.addTopMove(botMove)
-                    sound_playCard.play()
+                    if not botMove.passed:
+                        sound_playCard.play()
                     # Bot played valid move
                     nextTurn = True
                 else:
@@ -299,9 +282,9 @@ def draw_top_pile(top: Move):
     # print(top)
     if top.nCards == 0:
         return
-    x, y = WINDOW_W//2 - (115 + 115//2*(top.nCards-1))//2, WINDOW_H//2 - 176//2
+    x, y = WINDOW_W//2 - (CARD_W + CARD_W//2*(top.nCards-1))//2, WINDOW_H//2 - CARD_H//2
     for i, card in enumerate(top.cards):
-        window.blit(card.img, (x + 115//2*i, y))
+        window.blit(card.img, (x + CARD_W//2*i, y))
 
 # Draws both player hand and move cards
 def draw_player_cards(pos, player: Player) -> tuple[list[CardButton], list[CardButton]]:
@@ -313,9 +296,9 @@ def draw_player_cards(pos, player: Player) -> tuple[list[CardButton], list[CardB
 # Draws the players hand on screen
 def draw_player_hand(pos, player: Player) -> list[CardButton]:
     ret = []
-    start = WINDOW_W//2 - 115 * len(player.hand)//2
+    start = WINDOW_W//2 - CARD_W * len(player.hand)//2
     for i, card in enumerate(player.hand):
-        card = CardButton(player.hand[i], (start+115*i,WINDOW_H-176//2))
+        card = CardButton(player.hand[i], (start+CARD_W*i,WINDOW_H-CARD_H//2))
         card.draw(window, pos)
         ret.append(card)
     return ret
@@ -323,9 +306,9 @@ def draw_player_hand(pos, player: Player) -> list[CardButton]:
 # Draws the players selected move on screen
 def draw_player_move(pos, player: Player) -> list[CardButton]:
     ret = []
-    start = WINDOW_W//2 - 115 * len(player.move)//2
+    start = WINDOW_W//2 - CARD_W * len(player.move)//2
     for i, card in enumerate(player.move):
-        card = CardButton(player.move[i], (start+115*i,WINDOW_H-176-176//4-176//2))
+        card = CardButton(player.move[i], (start+CARD_W*i,WINDOW_H-CARD_H-CARD_H//4-CARD_H//2))
         card.draw(window, pos)
         ret.append(card)
     return ret

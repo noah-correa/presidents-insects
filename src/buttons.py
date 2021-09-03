@@ -1,40 +1,60 @@
 import pygame
 
-from src.card import Card
+from src.card import Card, CARD_W, CARD_H
 
 BG_COLOUR = (0, 71, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 YELLOW = (255, 204, 0)
 
-# Returns text surface and rectangle
-def text_objects(text, font, colour):
-    textSurface = font.render(text, True, colour)
-    return textSurface, textSurface.get_rect()
+H1 = 'resources/fonts/casino.3d-filled-marquee-italic.ttf'
+H2 = 'resources/fonts/casino.3d-lines-regular.ttf'
+N = 'resources/fonts/casino.3d-regular.ttf'
 
-# Returns default text with varying size
-def load_text(size) -> pygame.font:
-    return pygame.font.Font('freesansbold.ttf', size)
 
+# Finds rectangle alignment
+def get_rect_align(s: pygame.Surface, position: tuple[int,int], align: str):
+    if align == 'tl':
+        return s.get_rect(topleft=position)
+    elif align == 'tl':
+        return s.get_rect(topleft=position)
+    elif align == 'c':
+        return s.get_rect(center=position)
+    elif align == 'br':
+        return s.get_rect(bottomright=position)
+    elif align == 'bl':
+        return s.get_rect(bottomleft=position)
+
+
+
+# Plain Text class
+class PlainText():
+    def __init__(self, text, size, position, align=False, font='N'):
+        self.string = text
+        self.font = pygame.font.Font(eval(font), size)
+        self.text = self.font.render(self.string, 1, BLACK)
+        self.rect = get_rect_align(self.text, position, align)
+
+    def draw(self, window):
+        window.blit(self.text, self.rect)
+
+
+# Text Button class
 class TextButton():
-    def __init__(self, text, size, position, callback, params=None, center=False):
-        self.text = text
-        self.size = size
-        font = load_text(self.size)
-        txt = font.render(self.text, 1, BLACK)
-        self.rect = txt.get_rect(topleft=position)
-        if center:
-            self.rect = txt.get_rect(center=position)
+    def __init__(self, text, size, position, callback, params=None, align='tl', font='N'):
+        self.string = text
+        self.font = pygame.font.Font(eval(font), size)
+        self.text = self.font.render(self.string, 1, BLACK)
+        self.rect = get_rect_align(self.text, position, align)
         self.callback = callback
         self.params = params
 
     def draw(self, window, pos=None):
-        font = load_text(self.size)
         if pos is not None and self.rect.collidepoint(pos):
-            text = font.render(self.text, 1, WHITE)
+            text = self.font.render(self.string, 1, WHITE)
             window.blit(text, self.rect)
         else:
-            text = font.render(self.text, 1, BLACK)
+            text = self.font.render(self.string, 1, BLACK)
             window.blit(text, self.rect)
 
     def onClick(self, event):
@@ -50,10 +70,11 @@ class TextButton():
                     return False
 
 
+# Card Button class
 class CardButton():
-    def __init__(self, card: Card, position, callback=None, params=None):
+    def __init__(self, card: Card, position, callback=None, params=None, align='tl'):
         self.card = card
-        self.rect = card.img.get_rect(topleft=position)
+        self.rect = get_rect_align(card.img, position, align)
         self.callback = callback
         self.params = params
 
@@ -63,7 +84,7 @@ class CardButton():
     def draw(self, window, pos=None):
         #Call this method to draw the button on the screen
         if pos is not None and self.rect.collidepoint(pos):
-            window.blit(self.card.img, (self.rect[0], self.rect[1] - 176//8))
+            window.blit(self.card.img, (self.rect[0], self.rect[1] - CARD_H//8))
         else:
             window.blit(self.card.img, self.rect)
 
@@ -80,12 +101,13 @@ class CardButton():
                     return False
 
 
+# Image Button class
 class ImageButton():
-    def __init__(self, image, size, position, callback, params=None, hover=None):
+    def __init__(self, image, size, position, callback, params=None, hover=None, align='tl'):
         self.image = pygame.transform.scale(pygame.image.load(image), size)
         self.hover = pygame.transform.scale(pygame.image.load(hover), size)
         self.size = size
-        self.rect = self.image.get_rect(topleft=position)
+        self.rect = get_rect_align(self.image, position, align)
         self.callback = callback
         self.params = params
 
@@ -106,19 +128,3 @@ class ImageButton():
                 else:
                     self.callback(self.params)
                     return False
-
-
-class PlainText():
-    def __init__(self, text, size, position, center=False):
-        self.text = text
-        self.size = size
-        font = load_text(self.size)
-        txt = font.render(self.text, 1, BLACK)
-        self.rect = txt.get_rect(topleft=position)
-        if center:
-            self.rect = txt.get_rect(center=position)
-
-    def draw(self, window):
-        font = load_text(self.size)
-        text = font.render(self.text, 1, BLACK)
-        window.blit(text, self.rect)

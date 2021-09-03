@@ -4,13 +4,15 @@ Noah Correa
 """
 
 import random
+import pygame
 
-from src.card import Card
+from src.card import Card, CARD_H, CARD_W
 
 class Deck(object):
     def __init__(self):
         self.__deck = []
         self.__dealt = []
+        self.__cardBack = pygame.transform.scale(pygame.image.load("resources/cards/red_back.png"), (CARD_W, CARD_H))
 
         suits = ["Clubs", "Spades", "Diamonds", "Hearts"]
         for suit in suits:
@@ -55,6 +57,9 @@ class Deck(object):
 
     def getCard(self, index):
         return self.__deck[index]
+
+    def getCardBack(self):
+        return self.__cardBack
 
     # Deal a hand of n cards from deck
     def deal(self, n):
