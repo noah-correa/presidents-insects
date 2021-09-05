@@ -1,3 +1,4 @@
+from math import sqrt
 import pygame
 
 from src.card import Card, CARD_W, CARD_H
@@ -11,6 +12,7 @@ H1 = 'resources/fonts/casino.3d-filled-marquee-italic.ttf'
 H2 = 'resources/fonts/casino.3d-lines-regular.ttf'
 N = 'resources/fonts/casino.3d-regular.ttf'
 
+T = 500/15
 VELO = (1, 1)
 
 # Finds rectangle alignment
@@ -138,7 +140,7 @@ class CardButton():
         pos = (self.currpos[0] + VELO[0], self.currpos[1] + VELO[1])
 
         # Draw
-        
+
         self.currpos = pos
 
 
@@ -153,3 +155,25 @@ class CardButton():
                 else:
                     self.callback(self.params)
                     return False
+
+
+class ImageAnimation():
+    def __init__(self, img: pygame.Surface, start, target, angle=0):
+        self.img = img
+        self.target = target
+        self.currpos = start
+        self.angle = angle
+        self.d = int(sqrt((target[0]-start[0])**2 + (target[1]-start[1])**2) * 500/15)
+        self.dx = int((target[0]-start[0])/T)
+        self.dy = int((target[1]-start[1])/T)
+
+    def update(self, window):
+        self.currpos[0] += self.dx
+        self.currpos[1] += self.dy
+        rect = self.img.get_rect(center=self.currpos)
+        surf = pygame.transform.rotate(self.img, self.angle)
+        window.blit(surf, rect)
+        if self.endpos == self.currpos:
+            return True
+        return False
+

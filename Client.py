@@ -13,7 +13,7 @@ from src.game import Game
 from src.move import Move
 from src.player import Player
 from src.bot import Bot
-from src.buttons import PlainText, TextButton, PlainImage, ImageButton, CardButton, BG_COLOUR, N, H1, H2
+from src.buttons import PlainText, TextButton, PlainImage, ImageButton, CardButton, ImageAnimation, BG_COLOUR, N, H1, H2
 
 
 pygame.init()
@@ -260,7 +260,8 @@ def sp_game_loop(game: Game) -> None:
                             game.addTopMove(playerMove)
                             if not playerMove.passed:
                                 sound_playCard.play()
-                            nextTurn = True
+                                # ia_moveCards = ImageAnimation(player.move[0], )
+                                nextTurn = True
                         else:
                             currPlayer.addInvalidMove(playerMove)
 
@@ -325,7 +326,7 @@ def draw_player_move(pos, player: Player) -> list[CardButton]:
 
 # Draw other players cards
 def draw_other_cards(game: Game, player: Player):
-    other_players = []
+    other_players: list[Player] = []
     for p in game.players.values():
         if p != player:
             other_players.append(p)
@@ -378,9 +379,9 @@ def draw_other_cards(game: Game, player: Player):
         # pygame.draw.circle(WINDOW, (0,0,255), center_pos, 5)
         # pygame.draw.circle(WINDOW, (0,255,255), (startx,starty), 5)
         # pygame.draw.line(WINDOW, (255,0,0), (xpos-mid,ypos), (xpos+mid,ypos), width=3)
-        pt_playerName = PlainText(p.name, 25, (center_pos[0],center_pos[1]+CARD_H*1.1), align='c')
+        pt_playerName = PlainText(p.name, 25, (center_pos[0],center_pos[1]+CARD_H*1.05), align='c')
         pt_playerName.draw(WINDOW)
-        pt_playerRole = PlainText(p.role, 25, (center_pos[0],center_pos[1]+CARD_H*1.1+30), align='c')
+        pt_playerRole = PlainText(p.role, 25, (center_pos[0],center_pos[1]+CARD_H*1.05+30), align='c')
         pt_playerRole.draw(WINDOW)
 
     return
@@ -388,7 +389,6 @@ def draw_other_cards(game: Game, player: Player):
 
 # Quit game
 def quit_game():
-    pygame.display.quit()
     pygame.quit()
     sys.exit()
     # quit()
