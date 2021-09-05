@@ -19,7 +19,7 @@ class Game(object):
         self.__nTotal: int = total
         self.__nPlayers: int = players
         self.__nBots: int = total - players
-        self.__players: dict[Player] = {}
+        self.__players: dict[int, Player] = {}
         self.__roles: dict = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
         self.__nHand: int = 52//total
         self.__nSpare: int = 52%total
@@ -297,6 +297,13 @@ class Game(object):
     def getCurrentPlayer(self) -> Player:
         return self.players[self.__currPlayer]
 
+    
+    # Gets the player object by name
+    def getPlayer(self, name) -> Player:
+        pid = self.getPlayerId(name)
+        if pid != -1:
+            return self.players[pid]
+        return None
 
     # Checks if move is valid
     def validMove(self, move: Move) -> bool:
