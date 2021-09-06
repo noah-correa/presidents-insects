@@ -186,7 +186,7 @@ def game_loop(game: Game) -> None:
         b_pass.draw(pos)
 
         topMove: Move = game.topMove
-        draw_top_pile(topMove)
+        draw_top_pile(game.prevMoves)
         nextTurn = False
 
         # Game logic
@@ -274,13 +274,16 @@ def game_loop(game: Game) -> None:
 
 
 # Draw top pile card(s)
-def draw_top_pile(top: Move):
-    # print(top)
-    if top.nCards == 0:
+def draw_top_pile(top: [Move]):
+    print(top)
+    if len(top) == 0:
         return
-    x, y = WINDOW_W//2 - 115//2*top.nCards, WINDOW_H//2 - 176//2
-    for i, card in enumerate(top.cards):
-        window.blit(card.img, (x + 115//2*i, y))
+
+    for i, curMove in enumerate(top):
+        x, y = WINDOW_W//2 - 115//2*curMove.nCards - 60*i, WINDOW_H//2 - 176//2
+        for j, card in enumerate(curMove.cards):
+            image = pygame.transform.rotate(card.img, 30*i)
+            window.blit(image, (x + 115//2*i, y))
 
 # Draws both player hand and move cards
 def draw_player_cards(pos, player: Player) -> tuple(([CardButton], [CardButton])):

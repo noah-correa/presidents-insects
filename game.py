@@ -29,6 +29,7 @@ class Game(object):
         self.__turnNumber: int = 0
         self.__currPlayer: int = 0
         self.__topMove: Move = Move(0)
+        self.__prevMoves: Move = []
         self.__over = False
 
         self.addPlayers()
@@ -85,6 +86,10 @@ class Game(object):
     @property
     def topMove(self):
         return self.__topMove
+
+    @property
+    def prevMoves(self):
+        return self.__prevMoves
 
     @property
     def gameNumber(self):
@@ -228,6 +233,7 @@ class Game(object):
         self.__roundNumber += 1
         self.__turnNumber = 1
         self.__topMove = Move(0)
+        self.__prevMoves = []
 
 
     # Finds id of player of next turn
@@ -298,6 +304,7 @@ class Game(object):
         if move.passed:
             return
         self.__topMove = move
+        self.__prevMoves.append(move)
 
     # Updates Game object for next turn
     def nextTurn(self) -> None:
@@ -347,6 +354,9 @@ class Game(object):
         for player in self.players.values():
             ret += f'{player.role} {player.name}: {player.nCards}, '
         return ret[:-2]
+
+    def resetTurnMoves(self):
+        self.__prevMoves = []
 
     # def __str__(self):
     #     ret = f'GAME\n\t->gameNumber={self.gameNumber}\n\t->gameNumber={self.gameNumber}'
