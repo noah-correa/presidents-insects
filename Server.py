@@ -16,6 +16,9 @@ PLAYERS = {}                        # holds active players in format { <username
 T_LOCK = threading.Condition()      # thread lock
 
 
+def getIP():
+    return json.loads(urllib.request.urlopen('https://jsonip.com/').read())['ip']
+
 def start_server():
     global PLAYERS
     global T_LOCK
@@ -25,16 +28,15 @@ def start_server():
         PORT = 9229
     elif len(sys.argv) == 2:
         # ADDR = sys.argv[1]
+        ADDR = gethostbyname(gethostname())
         PORT = int(sys.argv[1])
     else:
-        print("Usage: python Server.py <server address> <server port>")
+        print("Usage: python Server.py <server port>")
         sys.exit()
 
-    s = gethostbyname(gethostname())
-    print(s)
-
-    ADDR = s
     print(f"Starting server at {ADDR}:{PORT}")
+
+    # print(getIP())
 
     SOCKET = socket(AF_INET, SOCK_STREAM)
     SOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -44,18 +46,19 @@ def start_server():
 
     GAME = Game()
 
+    print("Waiting for players to join")
     while True:
         try:
             # Accept a client and create a thread for it
             playerSocket, playerAddress = SOCKET.accept()
             print(f"{playerAddress} connected")
             threading.Thread(target=newPlayerThread, args= (playerSocket, playerAddress)).start()
-        except BlockingIOError as e:
+        except BlockingIOError:
             continue
-        except OSError as e:
+        except OSError:
             break
         finally:
-            time.sleep(0.1)
+            time.sleep(0.5)
 
     SOCKET.close()
 
@@ -66,24 +69,27 @@ def newPlayerThread(playerSocket, playerAddress):
     global T_LOCK
 
     # Loop while client is not logged into server
-    print("Client connected")
     while True:
         with T_LOCK:  
-            # Receive client's username
-            data = json.loads(playerSocket.recv(1024).decode('utf-8'))
+            # Receive player's name
+            try:
+                data = recvJSON(playerSocket)
+            except:
+                continue
             playerName = data['name']
-            print(f"Received: {playerName}")
-            # Client entered a username already logged into server
+            # print(f"Received: {playerName}")
+            # Player entered a name already active
             if PLAYERS.get(playerName) != None:
-                playerSocket
-                pass
+                print(f"Player '{playerName}' already exists")
+                # Send BAD message
+                json_status = {'status': 0}
+                sendJSON(playerSocket, json_status)
 
-            # Client enters a new username
+            # Player enters a new name
             else:
-                print("New User")
-                # playerSocket.send((NEW_USER + "\r\nNew user\r\n\r\n").encode('utf-8'))
-                
-                # playerSocket.send((OK + "\r\nUser added\r\n\r\n").encode('utf-8'))
+                # Send OK message
+                json_status = {'status': 1}
+                sendJSON(playerSocket, json_status)
                 break
             T_LOCK.notify()
 
@@ -97,12 +103,12 @@ def newPlayerThread(playerSocket, playerAddress):
 
     
 
-def recvJSON(socket):
-    data = json.loads(socket.recv(1024).decode('utf-8'))
+def recvJSON(sock: socket) -> dict:
+    data = json.loads(sock.recv(1024).decode('utf-8'))
     return data
 
-def sendJSON(socket, data):
-    json_data = json.loads()
+def sendJSON(sock: socket, data) -> None:
+    sock.send(json.dumps(data).encode('utf-8'))
 
 
 

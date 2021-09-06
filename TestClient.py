@@ -4,6 +4,7 @@ import time
 import json
 
 from src.player import Player
+from src.card import Card
 
 PLAYER = None
 
@@ -21,7 +22,6 @@ def start_client():
         print("Usage: python TestClient.py <server address> <server port>")
         sys.exit()
 
-    name = input("Enter your name: ")
 
     # Create socket
     SOCKET = socket(AF_INET, SOCK_STREAM)
@@ -30,21 +30,41 @@ def start_client():
     SOCKET.connect((ADDR, PORT))
     print(f"Connected to server {ADDR}:{PORT}")
 
-    json_name = {'name': name}
-    
+    name = input("Enter your name: ")
+    while True:
+        json_name = {'name': name}
+        sendJSON(SOCKET, json_name)
+        data = recvJSON(SOCKET)
+        status = data['status']
+        
+        if status == 1:
+            # Valid name
+            break
+        print(f"User with name '{name}' already exists")
+        name = input("Enter a different name: ")
 
-    SOCKET.send(json.dumps(json_name).encode('utf-8'))
+    PLAYER = Player(name)
 
     i = 0
     while i < 30:
         i += 1
         time.sleep(1)
 
+    # disconnect(SOCKET)
     SOCKET.close()
 
     return
 
+def recvJSON(sock: socket) -> dict:
+    data = json.loads(sock.recv(1024).decode('utf-8'))
+    return data
 
+def sendJSON(sock: socket, data) -> None:
+    sock.send(json.dumps(data).encode('utf-8'))
+
+def disconnect(sock: socket):
+    json_disconnect = {'player': PLAYER, 'status': 0}
+    sendJSON(sock, json_disconnect)
 
 if __name__ == "__main__":
     start_client()
