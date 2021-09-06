@@ -14,26 +14,25 @@ from src.move import Move
 ROLES = ['President', 'Vice-President', 'Citizen', 'Insect', 'Giga-Insect']
 
 class Game(object):
-    def __init__(self, players, total):
+    def __init__(self):
         self.__deck: Deck = Deck()
-        self.__nTotal: int = total
-        self.__nPlayers: int = players
-        self.__nBots: int = total - players
+        self.__nTotal: int = 0 
+        self.__nPlayers: int = 0
+        self.__nBots: int = 0
         self.__players: dict[int, Player] = {}
         self.__roles: dict = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
-        self.__nHand: int = 52//total
-        self.__nSpare: int = 52%total
+        self.__nHand: int = 0
+        self.__nSpare: int = 0
         self.__winners: list = []
         self.__gameNumber: int = 0
         self.__roundNumber: int = 0
         self.__turnNumber: int = 0
         self.__currPlayer: int = 0
         self.__topMove: Move = Move(0)
-        self.__over = False
 
         Player.reset_id()
         Bot.reset_id()
-        self.addPlayers()
+        # self.addPlayers()
         # self.game_loop()
 
     @property
@@ -92,10 +91,6 @@ class Game(object):
     def gameNumber(self):
         return self.__gameNumber
 
-    @property
-    def isOver(self):
-        return self.__over
-
     # Returns id of given player name, returns -1 if not found
     def getPlayerId(self, name) -> int:
         for i in self.players:
@@ -109,27 +104,43 @@ class Game(object):
                 return True
         return False
 
-    # Adds a new player to the game
-    def addPlayers(self) -> None:
-        # for i in range(self.nBots):
-        #     new_bot = Bot()
-        #     self.players[new_bot.id] = new_bot
-        # for i in range(self.nPlayers):
-        #     name = input(f"Enter name for player {i+1}: ")
-        #     badName = self.__checkName(name)
-        #     while badName:
-        #         name = input(f"Name already taken. Please enter another name for player {i+1}: ")
-        #         badName = self.__checkName(name)
-        #     new_player = Player(name)
-        #     self.players[new_player.id] = new_player
-        # self.__updateRoles()
-        for i in range(self.nBots):
+    def startSP(self, total):
+        self.__nTotal = total
+        self.__nPlayers = 1
+        self.__nBots = total-1
+        self.__nHand = 52//self.__nTotal
+        self.__nSpare = 52%self.__nTotal
+
+        for _ in range(self.nBots):
             new_bot = Bot()
             self.players[new_bot.id] = new_bot
-        for i in range(self.nPlayers):
-            new_player = Player(f"Player {i+1}")
-            self.players[new_player.id] = new_player
+
+        new_player = Player(f"Player 1")
+        self.players[new_player.id] = new_player
         self.__updatePlayerRoles()
+        self.newGame()
+        return
+
+    def startMP(self):
+        self.__nBots = 0
+        self.__nTotal = self.__nPlayers
+        self.__nHand = 52//self.__nTotal
+        self.__nSpare = 52%self.__nTotal
+        self.__updatePlayerRoles()
+        self.newGame()
+        return
+
+
+    def addNewPlayer(self, name) -> bool:
+        notvalid = self.__checkName(name)
+        if notvalid:
+            return False
+        else:
+            newPlayer = Player(name)
+            self.players[newPlayer.id] = newPlayer
+            self.__nPlayers += 1
+            return True
+
 
     # Deals hand to all players
     def __dealHands(self) -> None:
@@ -173,7 +184,6 @@ class Game(object):
 
 
     def __updatePlayerRoles(self) -> None:
-        # if len(self.winners) != self.nTotal:
         if self.gameNumber != 0:
             self.winners.append(self.__findLastPlayer())
             # print(f"winners order: {self.winners}")
@@ -354,7 +364,6 @@ class Game(object):
             # Set game to be over
             # self.__updatePlayerRoles()
             # self.__updateRoles()
-            self.__over = True
             self.newGame()
             return
 
@@ -386,8 +395,24 @@ class Game(object):
             ret += f'{player.role} {player.name}: {player.nCards}, '
         return ret[:-2]
 
-    # def __str__(self):
-    #     ret = f'GAME\n\t->gameNumber={self.gameNumber}\n\t->gameNumber={self.gameNumber}'
+    def __str__(self):
+        # ret = f'GAME\n\t->gameNumber={self.gameNumber}\n\t->gameNumber={self.gameNumber}'
+        ret = "=== GAME ===\n\t"
+        ret += f"deck = {self.__deck}\n\t"
+        ret += f"nTotal = {self.__nTotal}\n\t"
+        ret += f"nPlayers = {self.__nPlayers}\n\t"
+        ret += f"nBots = {self.__nBots}\n\t"
+        ret += f"players = {self.__players}\n\t"
+        ret += f"roles = {self.__roles}\n\t"
+        ret += f"nHand = {self.__nHand}\n\t"
+        ret += f"nSpare = {self.__nSpare}\n\t"
+        ret += f"winners = {self.__winners}\n\t"
+        ret += f"gameNumber = {self.__gameNumber}\n\t"
+        ret += f"roundNumber = {self.__roundNumber}\n\t"
+        ret += f"turnNumber = {self.__turnNumber}\n\t"
+        ret += f"currPlayer = {self.__currPlayer}\n\t"
+        ret += f"topMove = {self.__topMove}\n\t"
+        return ret
 
 
 

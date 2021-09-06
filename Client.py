@@ -151,8 +151,8 @@ def sp_loading(total: int) -> None:
     pt_loading.draw(WINDOW)
     pygame.display.update()
     pygame.time.delay(500)
-    game = Game(1, total)
-    game.newGame()
+    game = Game()
+    game.startSP(total)
     pygame.time.delay(500)
     sp_game_loop(game)
 
@@ -255,13 +255,14 @@ def sp_game_loop(game: Game) -> None:
                         
                     if playerMove is not None:
                         isValidMove = game.validMove(playerMove)
+                        # print(isValidMove)
 
                         if isValidMove:
                             game.addTopMove(playerMove)
                             if not playerMove.passed:
                                 sound_playCard.play()
                                 # ia_moveCards = ImageAnimation(player.move[0], )
-                                nextTurn = True
+                            nextTurn = True
                         else:
                             currPlayer.addInvalidMove(playerMove)
 
