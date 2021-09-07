@@ -13,7 +13,7 @@ from src.game import Game
 from src.move import Move
 from src.player import Player
 from src.bot import Bot
-from src.buttons import PlainText, TextButton, PlainImage, ImageButton, CardButton, ImageAnimation, BG_COLOUR, N, H1, H2
+from src.buttons import GREY, PlainText, TextButton, PlainImage, ImageButton, CardButton, ImageAnimation, BG_COLOUR, BLACK, YELLOW, N, H1, H2
 
 
 pygame.init()
@@ -163,13 +163,12 @@ def sp_game_loop(game: Game) -> None:
     sound_playCard.set_volume(0.1)
     tb_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings)
     tb_settings.setHover('resources/icons/menu_icon_hover.png')
-    tb_play = TextButton('Play', 50, (WINDOW_W,WINDOW_H-50), None, align='br')
     tb_pass = TextButton('Pass', 50, (WINDOW_W, WINDOW_H), None, align='br')
 
     player: Player = game.getPlayer('Player 1')
     # ADDED BOT DELAY
     # 0 for delay, -1 for no delay
-    botDelay = -1
+    botDelay = 0
 
     run = True
     while run:
@@ -180,15 +179,10 @@ def sp_game_loop(game: Game) -> None:
         game_round_turn_text = PlainText(f"Game {game.gameNumber} Round {game.roundNumber} Turn {game.turnNumber}", 40, (WINDOW_W//2, 20), align='c', font=H2)
         game_round_turn_text.draw(WINDOW)
 
-        # nCards_text = PlainText(game.getPlayersNumCards(), 25, (WINDOW_W//2, 80), align='c')
-        # nCards_text.draw(WINDOW)
-
         # Draw buttons
         pos = pygame.mouse.get_pos()
         tb_settings.draw(WINDOW, pos)
-        tb_play.draw(WINDOW, pos)
-        tb_pass.draw(WINDOW, pos)
-        
+
         # Draw player cards
         draw_player_cards(pos, player)
 
@@ -203,11 +197,6 @@ def sp_game_loop(game: Game) -> None:
         # Game logic
         # Get the current player
         currPlayer: Union[Player, Bot] = game.getCurrentPlayer()
-        currPlayerText = f"{currPlayer.name}'s turn"
-        if not currPlayer.isBot:
-            currPlayerText = "Your turn"
-        cp_text = PlainText(currPlayerText, 40, (WINDOW_W//2, 55), align='c')
-        cp_text.draw(WINDOW)
 
         # Check if bot
         isValidMove = False
@@ -235,7 +224,13 @@ def sp_game_loop(game: Game) -> None:
         else:
             botDelay = 0 if botDelay != -1 else -1
             # Draw Pygame
+
             p_hand, p_move = draw_player_cards(pos, currPlayer)
+
+            tb_play = TextButton('Play', 50, (WINDOW_W//2+CARD_W*len(player.move)//2+CARD_W,WINDOW_H-CARD_H-CARD_H//4), None, align='c')
+            if game.playerValidMove(player):
+                tb_play.draw(WINDOW, pos)
+            tb_pass.draw(WINDOW, pos)
             # Loop through events
             for event in pygame.event.get():
                 # Check if game quit
@@ -255,13 +250,11 @@ def sp_game_loop(game: Game) -> None:
                         
                     if playerMove is not None:
                         isValidMove = game.validMove(playerMove)
-                        # print(isValidMove)
 
                         if isValidMove:
                             game.addTopMove(playerMove)
                             if not playerMove.passed:
                                 sound_playCard.play()
-                                # ia_moveCards = ImageAnimation(player.move[0], )
                             nextTurn = True
                         else:
                             currPlayer.addInvalidMove(playerMove)
@@ -327,33 +320,44 @@ def draw_player_move(pos, player: Player) -> list[CardButton]:
 
 # Draw other players cards
 def draw_other_cards(game: Game, player: Player):
+    colour = BLACK
+    if player.id == game.currPlayer:
+        colour = YELLOW
+    elif player.passed:
+        colour = GREY
+
+    pt_pName = PlainText(player.name, 35, (5,WINDOW_H-35), align='bl')
+    pt_pName.draw(WINDOW, colour)
+    pt_pRole = PlainText(player.role, 35, (5,WINDOW_H), align='bl')
+    pt_pRole.draw(WINDOW, colour)
+
     other_players: list[Player] = []
     for p in game.players.values():
         if p != player:
             other_players.append(p)
 
-    # angle = 180//(len(other_players)-1)
-    # start_angle = 90
     card = game.deck.getCardBack()
     cp = WINDOW_W//2, WINDOW_H
 
     # rect = pygame.Rect((CARD_H//2, 80 + CARD_H//2), (WINDOW_W-CARD_H,  WINDOW_H//2-CARD_H//2-(80 + CARD_H//2)))
-    # pygame.draw.rect(WINDOW, (255,0,0), rect, width=5)
 
     # Other player card centers
     # Width
     a = (WINDOW_W-2*CARD_H)//2
     # Height
-    b = WINDOW_H//2-(80+CARD_H//2)
+    b = WINDOW_H//2-(40+CARD_H//2)
 
-    # print(a, b)
 
     for i, p in enumerate(other_players):
+        colour = BLACK
+        if p.id == game.currPlayer:
+            colour = YELLOW
+        elif p.passed:
+            colour = GREY
+
         xpos = CARD_H + (WINDOW_W-2*CARD_H)//(len(other_players)-1)*i
         ypos = -b/a*sqrt(a**2-(xpos-WINDOW_W//2)**2)+WINDOW_H//2
-        # print(xpos)
-        # print(WINDOW_H//2 - CARD_H - 20)
-        # print(20+CARD_H)
+
         center_pos = xpos, ypos
         # print(center_pos)
 
@@ -373,17 +377,11 @@ def draw_other_cards(game: Game, player: Player):
             pos = startx + j*(CARD_W//8*cos(angle*pi/180)), starty - j*(CARD_W//8*sin(angle*pi/180))
             crect = c.get_rect(center=pos)
             WINDOW.blit(c, crect)
-            # pygame.draw.circle(WINDOW, (0,0,0), pos, 5)
 
-        # crect = c.get_rect(center=center_pos)
-        # WINDOW.blit(c, crect)
-        # pygame.draw.circle(WINDOW, (0,0,255), center_pos, 5)
-        # pygame.draw.circle(WINDOW, (0,255,255), (startx,starty), 5)
-        # pygame.draw.line(WINDOW, (255,0,0), (xpos-mid,ypos), (xpos+mid,ypos), width=3)
         pt_playerName = PlainText(p.name, 25, (center_pos[0],center_pos[1]+CARD_H*1.05), align='c')
-        pt_playerName.draw(WINDOW)
+        pt_playerName.draw(WINDOW, colour)
         pt_playerRole = PlainText(p.role, 25, (center_pos[0],center_pos[1]+CARD_H*1.05+30), align='c')
-        pt_playerRole.draw(WINDOW)
+        pt_playerRole.draw(WINDOW, colour)
 
     return
 

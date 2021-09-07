@@ -340,6 +340,13 @@ class Game(object):
             return False
         return False
 
+    # Checks if player's current move cards are valid
+    def playerValidMove(self, player: Player) -> bool:
+        if player.move == []:
+            return False
+        testMove = Move(player.id, player.move, player.moveRank)
+        return self.validMove(testMove)
+        
     # Adds the new move to top of pile
     def addTopMove(self, move) -> None:
         # print(f"\t{move}")

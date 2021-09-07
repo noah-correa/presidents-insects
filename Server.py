@@ -15,7 +15,6 @@ from src.player import Player
 PLAYERS = {}                        # holds active players in format { <username>: [<socket>, <address>], ...}
 T_LOCK = threading.Condition()      # thread lock
 
-
 def getIP():
     return json.loads(urllib.request.urlopen('https://jsonip.com/').read())['ip']
 
@@ -28,15 +27,13 @@ def start_server():
         PORT = 9229
     elif len(sys.argv) == 2:
         # ADDR = sys.argv[1]
-        ADDR = gethostbyname(gethostname())
+        ADDR = ''
         PORT = int(sys.argv[1])
     else:
         print("Usage: python Server.py <server port>")
         sys.exit()
 
-    print(f"Starting server at {ADDR}:{PORT}")
-
-    # print(getIP())
+    print(f"Starting server at {getIP()}:{PORT}")
 
     SOCKET = socket(AF_INET, SOCK_STREAM)
     SOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)

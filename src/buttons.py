@@ -5,6 +5,7 @@ from src.card import Card, CARD_W, CARD_H
 
 BG_COLOUR = (0, 71, 0)
 BLACK = (0, 0, 0)
+GREY = (128, 128, 128)
 WHITE = (255, 255, 255)
 YELLOW = (255, 204, 0)
 
@@ -38,7 +39,8 @@ class PlainText():
         self.text = self.font.render(self.string, 1, BLACK)
         self.rect = get_rect_align(self.text, position, align)
 
-    def draw(self, window):
+    def draw(self, window, colour=BLACK):
+        self.text = self.font.render(self.string, 1, colour)
         window.blit(self.text, self.rect)
 
 
