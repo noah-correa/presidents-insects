@@ -299,7 +299,7 @@ class Game(object):
         self.__prevMoves = []
 
     # Updates Game object for next turn
-    def nextTurn(self) -> None:
+    def nextTurn(self) -> bool:
         print(f"==== Game {self.gameNumber}, Round {self.roundNumber}, Turn {self.turnNumber} ====")
         print(self.topMove)
 
@@ -310,7 +310,7 @@ class Game(object):
         # Check if only 1 player remains
         if len(self.winners) == self.nTotal - 1:
             self.newGame()
-            return
+            return True
 
         # Otherwise, get the next player
         next_pid = self.__nextTurnPlayer()
@@ -323,7 +323,7 @@ class Game(object):
             # Otherwise, go to next player
             self.__currPlayer = next_pid
             self.__turnNumber += 1
-        return
+        return False
 
     # Gets the current player Object
     def getCurrentPlayer(self) -> Player:

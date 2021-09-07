@@ -15,32 +15,46 @@ from src.player import Player
 from src.bot import Bot
 from src.buttons import GREY, PlainText, TextButton, PlainImage, ImageButton, CardButton, ImageAnimation, BG_COLOUR, BLACK, YELLOW, N, H1, H2
 
+def find_resolution(w,h):
+    resolutions = [(3840,2160), (2560,1440), (1920,1080), (1600,900), (1366,768), (1280,720), (1152,648), (1024,576)]
+    for nw, nh in resolutions:
+        if nw < w and nh < h:
+            return nw, nh
 
 pygame.init()
-WINDOW = pygame.display.set_mode((1600, 900))
+# WINDOW = pygame.display.set_mode((1600, 900))
+info = pygame.display.Info()
+# print(info)
+startW, startH = info.current_w, info.current_h
+lower_w, lower_h = find_resolution(startW, startH)
+displayFlags = pygame.HWSURFACE | pygame.DOUBLEBUF
+WINDOW = pygame.display.set_mode((lower_w,lower_h), flags=displayFlags)
 WINDOW_W, WINDOW_H = pygame.display.get_window_size()
 WINDOW.fill(BG_COLOUR)
 pygame.display.set_caption("Presidents and Insects")
 pygame.display.set_icon(pygame.image.load('resources/icons/cockroach.png'))
-pygame.display.update()
-
+pygame.display.flip()
 
 
 # Main menu screen
 def game_intro():
-    tb_sp = TextButton('Singleplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3), sp_number, align='c', font=H2)
-    tb_mp = TextButton('Multiplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3+60), None, align='c', font=H2)
-    tb_settings = TextButton('Settings', 60, (WINDOW_W//2, 2*WINDOW_H//3+60*2), settings, align='c', font=H2)
-    pt_pai = PlainText('Presidents and Insects', 100, (WINDOW_W//2,WINDOW_H//2), align='c', font=H1)
-    pi_cockroach = PlainImage("resources/icons/cockroach.png", (151*2,191*2), (WINDOW_W//2,WINDOW_H//3-100), align='c')
-    # pi_cockroach = PlainImage("resources/icons/cockroach.png", (151*2,191*2), (WINDOW_W//2-151,WINDOW_H//3-275))
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
 
     run = True
     while run:
+        tb_sp = TextButton('Singleplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3), sp_number, align='c', font=H2)
+        tb_mp = TextButton('Multiplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3+60), None, align='c', font=H2)
+        tb_settings = TextButton('Settings', 60, (WINDOW_W//2, 2*WINDOW_H//3+60*2), settings, align='c', font=H2)
+        pt_pai = PlainText('Presidents and Insects', 100, (WINDOW_W//2,WINDOW_H//2), align='c', font=H1)
+        pi_cockroach = PlainImage("resources/icons/cockroach.png", (151*2,191*2), (WINDOW_W//2,WINDOW_H//3-100), align='c')
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
+            if event.type == pygame.VIDEORESIZE:
+                WINDOW_W, WINDOW_H = pygame.display.get_window_size()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 tb_settings.onClick(event)
                 tb_sp.onClick(event)
@@ -52,27 +66,32 @@ def game_intro():
         tb_sp.draw(WINDOW, pos)
         tb_mp.draw(WINDOW, pos)
 
-        pygame.display.update()
+        pygame.display.flip()
         pygame.time.delay(15)
 
 
 # Settings screen
 def settings():
-    tb_back = TextButton('Back', 50, (0, 0), None)
-    tb_mm = TextButton('Main Menu', 50, (WINDOW_W//2, WINDOW_H//2-90), game_intro, align='c')
-    tb_fs = TextButton('Fullscreen', 50, (WINDOW_W//2,WINDOW_H//2-30), None, align='c')
-    tb_quit = TextButton('Quit Game', 50, (WINDOW_W//2,WINDOW_H//2+30), quit_game, align='c')
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
 
     run = True
-    screen = None
     while run:
+        tb_back = TextButton('Back', 50, (0, 0), None, font=H2)
+        tb_mm = TextButton('Main Menu', 50, (WINDOW_W//2, WINDOW_H//2-90), game_intro, align='c')
+        tb_fs = TextButton('Fullscreen', 50, (WINDOW_W//2,WINDOW_H//2-30), None, align='c')
+        tb_quit = TextButton('Quit Game', 50, (WINDOW_W//2,WINDOW_H//2+30), quit_game, align='c')
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
+            if event.type == pygame.VIDEORESIZE:
+                WINDOW_W, WINDOW_H = pygame.display.get_window_size()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if tb_fs.onClick(event):
                     pygame.display.toggle_fullscreen()
+                    WINDOW_W, WINDOW_H = pygame.display.get_window_size()
                     pygame.time.delay(100)
                 tb_mm.onClick(event)
                 tb_quit.onClick(event)
@@ -85,20 +104,25 @@ def settings():
         tb_fs.draw(WINDOW, pos)
         tb_quit.draw(WINDOW, pos)
 
-        pygame.display.update()
+        pygame.display.flip()
         pygame.time.delay(15)
 
 
 # Rules screen
 def rules():
-    tb_back = TextButton('Back', 50, (0, 0), None)
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
 
     run = True
     while run:
+        tb_back = TextButton('Back', 50, (0, 0), None, font=H2)
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
+            if event.type == pygame.VIDEORESIZE:
+                WINDOW_W, WINDOW_H = pygame.display.get_window_size()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if tb_back.onClick(event):
                     return
@@ -107,25 +131,30 @@ def rules():
         # TODO: Render rules
         tb_back.draw(WINDOW, pos)
 
-        pygame.display.update()
+        pygame.display.flip()
         pygame.time.delay(15)
 
 
 
 # Singleplayer number of players screen
 def sp_number():
-    tb_back = TextButton('Back', 50, (0, 0), game_intro)
-    tb_5 = TextButton('5', 100, (WINDOW_W//2-200,WINDOW_H//2), sp_loading, params=5)
-    tb_6 = TextButton('6', 100, (WINDOW_W//2-50,WINDOW_H//2), sp_loading, params=6)
-    tb_7 = TextButton('7', 100, (WINDOW_W//2+100,WINDOW_H//2), sp_loading, params=7)
-    pt_numPlayers = PlainText('Choose total number of players', 50, (WINDOW_W//2,WINDOW_H//3), align='c', font=H2)
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
 
     run = True
     while run:
+        tb_back = TextButton('Back', 50, (0, 0), game_intro, font=H2)
+        tb_5 = TextButton('5', 100, (WINDOW_W//2-200,WINDOW_H//2), sp_loading, params=5)
+        tb_6 = TextButton('6', 100, (WINDOW_W//2-50,WINDOW_H//2), sp_loading, params=6)
+        tb_7 = TextButton('7', 100, (WINDOW_W//2+100,WINDOW_H//2), sp_loading, params=7)
+        pt_numPlayers = PlainText('Choose total number of players', 50, (WINDOW_W//2,WINDOW_H//3), align='c', font=H2)
         pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
+            if event.type == pygame.VIDEORESIZE:
+                WINDOW_W, WINDOW_H = pygame.display.get_window_size()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 tb_back.onClick(event)
                 tb_5.onClick(event)
@@ -140,30 +169,41 @@ def sp_number():
         tb_6.draw(WINDOW, pos)
         tb_7.draw(WINDOW, pos)
 
-        pygame.display.update()
+        pygame.display.flip()
         pygame.time.delay(15)
 
 
 # Singleplayer loading screen
 def sp_loading(total: int) -> None:
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
+    WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+    sound_shuffleCards = pygame.mixer.Sound('resources/audio/card_shuffle.wav')
+    sound_shuffleCards.set_volume(0.1)
+    sound_shuffleCards.play()
     WINDOW.fill(BG_COLOUR)
     pt_loading = PlainText('LOADING', 50, (WINDOW_W//2,WINDOW_H//2), align='c')
     pt_loading.draw(WINDOW)
-    pygame.display.update()
+    pygame.display.flip()
     pygame.time.delay(500)
     game = Game()
     game.startSP(total)
     pygame.time.delay(500)
+    sound_shuffleCards.stop()
     sp_game_loop(game)
 
 
 # Game screen
 def sp_game_loop(game: Game) -> None:
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
+
     sound_playCard = pygame.mixer.Sound('resources/audio/play_card.wav')
     sound_playCard.set_volume(0.1)
     tb_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings)
     tb_settings.setHover('resources/icons/menu_icon_hover.png')
-    tb_pass = TextButton('Pass', 50, (WINDOW_W-5, WINDOW_H), None, align='br')
 
     player: Player = game.getPlayer('Player 1')
     # ADDED BOT DELAY
@@ -178,6 +218,7 @@ def sp_game_loop(game: Game) -> None:
         # Draw information at top of screen
         game_round_turn_text = PlainText(f"Game {game.gameNumber} Round {game.roundNumber} Turn {game.turnNumber}", 40, (WINDOW_W//2, 20), align='c', font=H2)
         game_round_turn_text.draw(WINDOW)
+        tb_pass = TextButton('Pass', 50, (WINDOW_W-5, WINDOW_H), None, align='br')
 
         # Draw buttons
         pos = pygame.mouse.get_pos()
@@ -224,8 +265,10 @@ def sp_game_loop(game: Game) -> None:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     quit_game()
-            
-
+                if event.type == pygame.VIDEORESIZE:
+                    WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    tb_settings.onClick(event)
 
         else:
             botDelay = 0 if botDelay != -1 else -1
@@ -242,7 +285,8 @@ def sp_game_loop(game: Game) -> None:
                 # Check if game quit
                 if event.type == pygame.QUIT:
                     quit_game()
-
+                if event.type == pygame.VIDEORESIZE:
+                    WINDOW_W, WINDOW_H = pygame.display.get_window_size()
                 # Check if mouse clicked
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     # Check if back button clicked
@@ -280,14 +324,22 @@ def sp_game_loop(game: Game) -> None:
             botDelay += 1
 
         if nextTurn:
-            game.nextTurn()
+            newRound = game.nextTurn()
+            if newRound:
+                sound_shuffleCards = pygame.mixer.Sound('resources/audio/card_shuffle.wav')
+                sound_shuffleCards.set_volume(0.1)
+                sound_shuffleCards.play()
+                pygame.time.delay(500)
 
-        pygame.display.update()
+        pygame.display.flip()
         pygame.time.delay(15)
 
 
 # Draw top pile card(s)
 def draw_top_pile(top: list[Move], pcpa: dict) -> None:
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
     if len(top) == 0:
         return
     # x, y = WINDOW_W//2 - (CARD_W + CARD_W//2*(top.nCards-1))//2, WINDOW_H//2 - CARD_H//2
@@ -318,6 +370,9 @@ def draw_player_cards(pos, player: Player) -> tuple[list[CardButton], list[CardB
 
 # Draws the players hand on screen
 def draw_player_hand(pos, player: Player) -> list[CardButton]:
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
     ret = []
     start = WINDOW_W//2 - CARD_W * len(player.hand)//2
     for i, card in enumerate(player.hand):
@@ -329,6 +384,9 @@ def draw_player_hand(pos, player: Player) -> list[CardButton]:
 
 # Draws the players selected move on screen
 def draw_player_move(pos, player: Player) -> list[CardButton]:
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
     ret = []
     start = WINDOW_W//2 - CARD_W * len(player.move)//2
     for i, card in enumerate(player.move):
@@ -340,6 +398,9 @@ def draw_player_move(pos, player: Player) -> list[CardButton]:
 
 # Draw other players cards
 def draw_other_cards(game: Game, player: Player) -> dict:
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
     colour = BLACK
     if player.id == game.currPlayer:
         colour = YELLOW
@@ -386,6 +447,8 @@ def draw_other_cards(game: Game, player: Player) -> dict:
 
 # Caculates the locations/angles for all players
 def __playerCardsPosAngle(game: Game, players: list[Player]):
+    global WINDOW_W
+    global WINDOW_H
     pcpa = {}
     cp = WINDOW_W//2, WINDOW_H
     a = (WINDOW_W-2*CARD_H)//2
@@ -399,12 +462,7 @@ def __playerCardsPosAngle(game: Game, players: list[Player]):
         startx = center_pos[0] - mid * cos(angle*pi/180)
         starty = center_pos[1] + mid * sin(angle*pi/180)
         pcpa[p.id] = (angle, (startx,starty), (xpos,ypos))
-
-
     return pcpa
-
-
-
 
 # Quit game
 def quit_game():
