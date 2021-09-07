@@ -163,7 +163,7 @@ def sp_game_loop(game: Game) -> None:
     sound_playCard.set_volume(0.1)
     tb_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings)
     tb_settings.setHover('resources/icons/menu_icon_hover.png')
-    tb_pass = TextButton('Pass', 50, (WINDOW_W, WINDOW_H), None, align='br')
+    tb_pass = TextButton('Pass', 50, (WINDOW_W-5, WINDOW_H), None, align='br')
 
     player: Player = game.getPlayer('Player 1')
     # ADDED BOT DELAY
@@ -187,11 +187,11 @@ def sp_game_loop(game: Game) -> None:
         draw_player_cards(pos, player)
 
         # Draw other players cards
-        draw_other_cards(game, player)
+        pcpa = draw_other_cards(game, player)
 
         # Draw top move
         topMove: Move = game.topMove
-        draw_top_pile(topMove)
+        draw_top_pile(game.prevMoves, pcpa)
         nextTurn = False
 
         # Game logic
@@ -204,7 +204,7 @@ def sp_game_loop(game: Game) -> None:
             # Check bot move is valid
 
             isValidMove = None
-            if botDelay == 50 or botDelay == -1:
+            if botDelay == 40 or botDelay == -1:
                 botMove = currPlayer.botPlayTurn(topMove)
                 isValidMove = game.validMove(botMove)
                 botDelay = 0 if botDelay != -1 else -1
@@ -220,6 +220,12 @@ def sp_game_loop(game: Game) -> None:
                     # Bot played invalid move
                     print("ERROR: Bot move invalid")
                     print(f"Bot tried to play: {botMove}")
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit_game()
+            
+
 
         else:
             botDelay = 0 if botDelay != -1 else -1
@@ -241,13 +247,13 @@ def sp_game_loop(game: Game) -> None:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     # Check if back button clicked
                     tb_settings.onClick(event)
-                    
+
                     playerMove = None
                     if tb_pass.onClick(event):
                         playerMove = currPlayer.passTurn()
                     elif tb_play.onClick(event):
                         playerMove = currPlayer.playTurn()
-                        
+
                     if playerMove is not None:
                         isValidMove = game.validMove(playerMove)
 
@@ -281,12 +287,26 @@ def sp_game_loop(game: Game) -> None:
 
 
 # Draw top pile card(s)
-def draw_top_pile(top: Move):
-    if top.nCards == 0:
+def draw_top_pile(top: list[Move], pcpa: dict) -> None:
+    if len(top) == 0:
         return
-    x, y = WINDOW_W//2 - (CARD_W + CARD_W//2*(top.nCards-1))//2, WINDOW_H//2 - CARD_H//2
-    for i, card in enumerate(top.cards):
-        WINDOW.blit(card.img, (x + CARD_W//2*i, y))
+    # x, y = WINDOW_W//2 - (CARD_W + CARD_W//2*(top.nCards-1))//2, WINDOW_H//2 - CARD_H//2
+    # for i, card in enumerate(top.cards):
+    #     WINDOW.blit(card.img, (x + CARD_W//2*i, y))
+    cx, cy = WINDOW_W//2, WINDOW_H//2
+    for i, move in enumerate(top):
+        player_pcpa = pcpa.get(move.pid)
+        if player_pcpa is None:
+            player_pcpa = [0]
+        angle = player_pcpa[0]
+        mid = (CARD_W//8*(move.nCards-1)+CARD_W)//2 - CARD_W//2
+        startx = cx - mid * cos(angle*pi/180)
+        starty = cy + mid * sin(angle*pi/180)
+        for j, card in enumerate(move.cards):
+            pos = startx + j*(CARD_W//8*cos(angle*pi/180)), starty - j*(CARD_W//8*sin(angle*pi/180))
+            image = pygame.transform.rotate(card.img, angle)
+            rect = image.get_rect(center=pos)
+            WINDOW.blit(image, rect)
 
 
 # Draws both player hand and move cards
@@ -319,16 +339,16 @@ def draw_player_move(pos, player: Player) -> list[CardButton]:
 
 
 # Draw other players cards
-def draw_other_cards(game: Game, player: Player):
+def draw_other_cards(game: Game, player: Player) -> dict:
     colour = BLACK
     if player.id == game.currPlayer:
         colour = YELLOW
     elif player.passed:
         colour = GREY
 
-    pt_pName = PlainText(player.name, 35, (5,WINDOW_H-35), align='bl')
+    pt_pName = PlainText(player.name, 50, (5,WINDOW_H-50), align='bl')
     pt_pName.draw(WINDOW, colour)
-    pt_pRole = PlainText(player.role, 35, (5,WINDOW_H), align='bl')
+    pt_pRole = PlainText(player.role, 50, (5,WINDOW_H), align='bl')
     pt_pRole.draw(WINDOW, colour)
 
     other_players: list[Player] = []
@@ -337,16 +357,9 @@ def draw_other_cards(game: Game, player: Player):
             other_players.append(p)
 
     card = game.deck.getCardBack()
-    cp = WINDOW_W//2, WINDOW_H
 
     # rect = pygame.Rect((CARD_H//2, 80 + CARD_H//2), (WINDOW_W-CARD_H,  WINDOW_H//2-CARD_H//2-(80 + CARD_H//2)))
-
-    # Other player card centers
-    # Width
-    a = (WINDOW_W-2*CARD_H)//2
-    # Height
-    b = WINDOW_H//2-(40+CARD_H//2)
-
+    pcpa = __playerCardsPosAngle(game, other_players)
 
     for i, p in enumerate(other_players):
         colour = BLACK
@@ -355,35 +368,42 @@ def draw_other_cards(game: Game, player: Player):
         elif p.passed:
             colour = GREY
 
-        xpos = CARD_H + (WINDOW_W-2*CARD_H)//(len(other_players)-1)*i
-        ypos = -b/a*sqrt(a**2-(xpos-WINDOW_W//2)**2)+WINDOW_H//2
-
-        center_pos = xpos, ypos
-        # print(center_pos)
-
+        angle, (startx,starty), (centerx,centery) = pcpa[p.id]
         # Pygame rotation defined as counter-clockwise rotation from the positive x-axis
-        angle = 90 - atan2((cp[1]-center_pos[1]),(cp[0]-center_pos[0]))*180/pi
         c = pygame.transform.rotate(card, angle)
-        # print(f"Bot {i+1} angle={angle}")
 
-        # angle = angle - 180
-        # WINDOW_W//2 - (CARD_W + CARD_W//2*(top.nCards-1))//2
-        mid = (CARD_W//8*(player.nCards-1)+CARD_W)//2 - CARD_W//2
-        startx = center_pos[0] - mid * cos(angle*pi/180)
-        starty = center_pos[1] + mid * sin(angle*pi/180)
-        
         for j in range(p.nCards):
             # draw all player cards here
             pos = startx + j*(CARD_W//8*cos(angle*pi/180)), starty - j*(CARD_W//8*sin(angle*pi/180))
             crect = c.get_rect(center=pos)
             WINDOW.blit(c, crect)
 
-        pt_playerName = PlainText(p.name, 25, (center_pos[0],center_pos[1]+CARD_H*1.05), align='c')
+        pt_playerName = PlainText(p.name, 25, (centerx,centery+CARD_H*1.05), align='c')
         pt_playerName.draw(WINDOW, colour)
-        pt_playerRole = PlainText(p.role, 25, (center_pos[0],center_pos[1]+CARD_H*1.05+30), align='c')
+        pt_playerRole = PlainText(p.role, 25, (centerx,centery+CARD_H*1.05+30), align='c')
         pt_playerRole.draw(WINDOW, colour)
+    return pcpa
 
-    return
+# Caculates the locations/angles for all players
+def __playerCardsPosAngle(game: Game, players: list[Player]):
+    pcpa = {}
+    cp = WINDOW_W//2, WINDOW_H
+    a = (WINDOW_W-2*CARD_H)//2
+    b = WINDOW_H//2-(40+CARD_H//2)
+    for i, p in enumerate(players):
+        xpos = CARD_H + (WINDOW_W-2*CARD_H)//(len(players)-1)*i
+        ypos = -b/a*sqrt(a**2-(xpos-WINDOW_W//2)**2)+WINDOW_H//2
+        center_pos = xpos, ypos
+        angle = 90 - atan2((cp[1]-ypos),(cp[0]-xpos))*180/pi
+        mid = (CARD_W//8*(p.nCards-1)+CARD_W)//2 - CARD_W//2
+        startx = center_pos[0] - mid * cos(angle*pi/180)
+        starty = center_pos[1] + mid * sin(angle*pi/180)
+        pcpa[p.id] = (angle, (startx,starty), (xpos,ypos))
+
+
+    return pcpa
+
+
 
 
 # Quit game
