@@ -13,7 +13,7 @@ from src.game import Game
 from src.move import Move
 from src.player import Player
 from src.bot import Bot
-from src.buttons import GREY, PlainText, TextButton, PlainImage, ImageButton, CardButton, ImageAnimation, BG_COLOUR, BLACK, YELLOW, N, H1, H2
+from src.buttons import GREY, PlainText, TextButton, PlainImage, ImageButton, CardButton, TextInput, BG_COLOUR, BLACK, YELLOW, N, H1, H2
 
 def find_resolution(w,h):
     resolutions = [(3840,2160), (2560,1440), (1920,1080), (1600,900), (1366,768), (1280,720), (1152,648), (1024,576)]
@@ -32,9 +32,9 @@ WINDOW = pygame.display.set_mode((lower_w,lower_h), flags=displayFlags)
 WINDOW_W, WINDOW_H = pygame.display.get_window_size()
 WINDOW.fill(BG_COLOUR)
 pygame.display.set_caption("Presidents and Insects")
-pygame.display.set_icon(pygame.image.load('resources/icons/cockroach.png'))
+pygame.display.set_icon(pygame.image.load('resources/icons/cockroach.png').convert_alpha())
 pygame.display.flip()
-
+FRAMERATE = 120
 
 # Main menu screen
 def game_intro():
@@ -42,10 +42,11 @@ def game_intro():
     global WINDOW_W
     global WINDOW_H
 
+    clock = pygame.time.Clock()
     run = True
     while run:
         tb_sp = TextButton('Singleplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3), sp_number, align='c', font=H2)
-        tb_mp = TextButton('Multiplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3+60), None, align='c', font=H2)
+        tb_mp = TextButton('Multiplayer', 60, (WINDOW_W//2, 2*WINDOW_H//3+60), mp_connect, align='c', font=H2)
         tb_settings = TextButton('Settings', 60, (WINDOW_W//2, 2*WINDOW_H//3+60*2), settings, align='c', font=H2)
         pt_pai = PlainText('Presidents and Insects', 100, (WINDOW_W//2,WINDOW_H//2), align='c', font=H1)
         pi_cockroach = PlainImage("resources/icons/cockroach.png", (151*2,191*2), (WINDOW_W//2,WINDOW_H//3-100), align='c')
@@ -58,6 +59,7 @@ def game_intro():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 tb_settings.onClick(event)
                 tb_sp.onClick(event)
+                tb_mp.onClick(event)
 
         WINDOW.fill(BG_COLOUR)
         pi_cockroach.draw(WINDOW)
@@ -67,7 +69,7 @@ def game_intro():
         tb_mp.draw(WINDOW, pos)
 
         pygame.display.flip()
-        pygame.time.delay(15)
+        clock.tick(FRAMERATE)
 
 
 # Settings screen
@@ -76,6 +78,7 @@ def settings():
     global WINDOW_W
     global WINDOW_H
 
+    clock = pygame.time.Clock()
     run = True
     while run:
         tb_back = TextButton('Back', 50, (0, 0), None, font=H2)
@@ -105,7 +108,7 @@ def settings():
         tb_quit.draw(WINDOW, pos)
 
         pygame.display.flip()
-        pygame.time.delay(15)
+        clock.tick(FRAMERATE)
 
 
 # Rules screen
@@ -114,6 +117,7 @@ def rules():
     global WINDOW_W
     global WINDOW_H
 
+    clock = pygame.time.Clock()
     run = True
     while run:
         tb_back = TextButton('Back', 50, (0, 0), None, font=H2)
@@ -132,7 +136,7 @@ def rules():
         tb_back.draw(WINDOW, pos)
 
         pygame.display.flip()
-        pygame.time.delay(15)
+        clock.tick(FRAMERATE)
 
 
 
@@ -142,6 +146,7 @@ def sp_number():
     global WINDOW_W
     global WINDOW_H
 
+    clock = pygame.time.Clock()
     run = True
     while run:
         tb_back = TextButton('Back', 50, (0, 0), game_intro, font=H2)
@@ -170,7 +175,7 @@ def sp_number():
         tb_7.draw(WINDOW, pos)
 
         pygame.display.flip()
-        pygame.time.delay(15)
+        clock.tick(FRAMERATE)
 
 
 # Singleplayer loading screen
@@ -210,6 +215,7 @@ def sp_game_loop(game: Game) -> None:
     # 0 for delay, -1 for no delay
     botDelay = 0
 
+    clock = pygame.time.Clock()
     run = True
     while run:
         # Draw all default stuff
@@ -332,7 +338,64 @@ def sp_game_loop(game: Game) -> None:
                 pygame.time.delay(500)
 
         pygame.display.flip()
-        pygame.time.delay(15)
+        clock.tick(FRAMERATE)
+
+# Multiplayer load screen
+def mp_connect():
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
+
+
+    ti_name = TextInput(35, (WINDOW_W//2,WINDOW_H//3+60), max_string_length=10)
+    clock = pygame.time.Clock()
+    run = True
+    while run:
+        tb_back = TextButton('Back', 50, (0, 0), game_intro, font=H2)
+        pt_name = PlainText('Enter your name:', 50, (WINDOW_W//2,WINDOW_H//3), align='c', font=H2)
+        pt_len = PlainText('Max 10 characters', 30, (WINDOW_W//2,WINDOW_H//3+40), align='c', font=N)
+        pt_server = PlainText('Enter server', 50, (WINDOW_W//2,2*WINDOW_H//3), align='c', font=H2)
+        pos = pygame.mouse.get_pos()
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                quit_game()
+            if event.type == pygame.VIDEORESIZE:
+                WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                tb_back.onClick(event)
+
+        ti_name.update(events)
+        # if ti_name.update(events):
+        #     username = ti_name.get_text()
+        #     print(username)
+
+        WINDOW.fill(BG_COLOUR)
+        ti_name.draw(WINDOW)
+        pt_name.draw(WINDOW)
+        pt_len.draw(WINDOW)
+        pt_server.draw(WINDOW)
+
+        tb_back.draw(WINDOW, pos)
+
+        pygame.display.flip()
+        clock.tick(FRAMERATE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # Draw top pile card(s)
