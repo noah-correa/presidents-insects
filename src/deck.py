@@ -9,10 +9,13 @@ import pygame
 from src.card import Card, CARD_H, CARD_W
 
 class Deck(object):
-    def __init__(self):
+    def __init__(self, nopygame=False):
         self.__deck = []
         self.__dealt = []
-        self.__cardBack = pygame.transform.scale(pygame.image.load("resources/cards/red_back.png").convert_alpha(), (CARD_W, CARD_H))
+        if nopygame:
+            self.__cardBack = None
+        else:
+            self.__cardBack = pygame.transform.scale(pygame.image.load("resources/cards/red_back.png").convert_alpha(), (CARD_W, CARD_H))
 
         suits = ["Clubs", "Spades", "Diamonds", "Hearts"]
         for suit in suits:
@@ -30,7 +33,7 @@ class Deck(object):
                     value = "Ace"
                 else:
                     value = str(rank)
-                self.__deck.append(Card(rank, value, suit))
+                self.__deck.append(Card(rank, value, suit, nopygame))
 
     def __str__(self):
         return f"Deck has {len(self.__deck)} cards and has dealt {len(self.__dealt)} cards."

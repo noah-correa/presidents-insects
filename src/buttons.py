@@ -188,9 +188,11 @@ class TextInput:
         self.position = position
         self.antialias = antialias
         self.text_color = colour
-        self.font_size = size
+        self.font_size = size[1] - 5
+        self.length = size[0]
         self.max_string_length = max_string_length
         self.input_string = initial_string  # Inputted text
+        self.rect = pygame.Rect(self.position[0]-self.length//2, self.position[1]-(self.font_size+5)//2, self.length, self.font_size+5)
 
         self.font_object = pygame.font.Font(font_family, self.font_size)
 
@@ -214,8 +216,13 @@ class TextInput:
         self.clock = pygame.time.Clock()
 
     def draw(self, window):
-        rect = self.get_surface().get_rect(center=self.position)
-        window.blit(self.get_surface(), rect)
+        pygame.draw.rect(window, WHITE, self.rect, width=0)
+        pygame.draw.rect(window, BLACK, self.rect, width=3)
+        rect = self.surface.get_rect(center=self.position)
+        window.blit(self.surface, rect)
+
+    def onClick(self, event):
+        return event.button == 1 and self.rect.collidepoint(event.pos)
 
     def update(self, events):
         for event in events:
@@ -259,13 +266,15 @@ class TextInput:
                     self.cursor_position = 0
 
                 elif len(self.input_string) < self.max_string_length or self.max_string_length == -1:
-                    # If no special key is pressed, add unicode of key to input_string
-                    self.input_string = (
-                        self.input_string[:self.cursor_position]
-                        + event.unicode
-                        + self.input_string[self.cursor_position:]
-                    )
-                    self.cursor_position += len(event.unicode)  # Some are empty, e.g. K_UP
+                    if event.unicode.isalpha() or event.unicode.isdigit() or event.unicode == ':' or event.unicode == '.':
+                        # If no special key is pressed, add unicode of key to input_string
+                        # print(type(event.unicode), event.unicode)
+                        self.input_string = (
+                            self.input_string[:self.cursor_position]
+                            + event.unicode
+                            + self.input_string[self.cursor_position:]
+                        )
+                        self.cursor_position += len(event.unicode)  # Some are empty, e.g. K_UP
 
             elif event.type == pl.KEYUP:
                 # *** Because KEYUP doesn't include event.unicode, this dict is stored in such a weird way
@@ -286,8 +295,7 @@ class TextInput:
                 event_key, event_unicode = key, self.keyrepeat_counters[key][1]
                 pygame.event.post(pygame.event.Event(pl.KEYDOWN, key=event_key, unicode=event_unicode))
 
-        # Re-render text surface:
-        string = self.input_string
+        self.surface = self.font_object.render(self.input_string, self.antialias, self.text_color)
 
         # Update self.cursor_visible
         self.cursor_ms_counter += self.clock.get_time()

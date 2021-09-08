@@ -14,9 +14,9 @@ from src.move import Move
 ROLES = ['President', 'Vice-President', 'Citizen', 'Insect', 'Giga-Insect']
 
 class Game(object):
-    def __init__(self):
+    def __init__(self, nopygame=False):
         #region Game Attributes
-        self.__deck: Deck = Deck()
+        self.__deck: Deck = Deck(nopygame)
         self.__nTotal: int = 0 
         self.__nPlayers: int = 0
         self.__nBots: int = 0

@@ -7,6 +7,8 @@ import pygame
 from time import sleep
 from typing import Text, Union
 from math import sin, cos, atan2, pi, sqrt
+import socket
+import json
 
 from src.card import Card, CARD_W, CARD_H
 from src.game import Game
@@ -34,7 +36,15 @@ WINDOW.fill(BG_COLOUR)
 pygame.display.set_caption("Presidents and Insects")
 pygame.display.set_icon(pygame.image.load('resources/icons/cockroach.png').convert_alpha())
 pygame.display.flip()
+
 FRAMERATE = 120
+SOCKET: socket.socket = None
+USERNAME: str = None
+
+
+
+# ! Pygame Screens ------------------------------------------------------------------ #
+
 
 # Main menu screen
 def game_intro():
@@ -345,16 +355,25 @@ def mp_connect():
     global WINDOW
     global WINDOW_W
     global WINDOW_H
+    global SOCKET
+    global USERNAME
 
+    # Reset socket and username if going back to mp screen
+    SOCKET, USERNAME = None, None
 
-    ti_name = TextInput(35, (WINDOW_W//2,WINDOW_H//3+60), max_string_length=10)
+    ti_name = TextInput((325, 40), (WINDOW_W//2,WINDOW_H//3+80), max_string_length=10)
+    ti_server = TextInput((400, 40), (WINDOW_W//2,WINDOW_H//2+40), max_string_length=-1)
+
+    ti_current = None
+    connected = None
     clock = pygame.time.Clock()
     run = True
     while run:
+        tb_connect = TextButton('Connect', 50, (WINDOW_W//2, WINDOW_H//2+110), None, align='c', font=H2)
         tb_back = TextButton('Back', 50, (0, 0), game_intro, font=H2)
         pt_name = PlainText('Enter your name:', 50, (WINDOW_W//2,WINDOW_H//3), align='c', font=H2)
         pt_len = PlainText('Max 10 characters', 30, (WINDOW_W//2,WINDOW_H//3+40), align='c', font=N)
-        pt_server = PlainText('Enter server', 50, (WINDOW_W//2,2*WINDOW_H//3), align='c', font=H2)
+        pt_server = PlainText('Enter server', 50, (WINDOW_W//2,WINDOW_H//2), align='c', font=H2)
         pos = pygame.mouse.get_pos()
         events = pygame.event.get()
         for event in events:
@@ -364,18 +383,33 @@ def mp_connect():
                 WINDOW_W, WINDOW_H = pygame.display.get_window_size()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 tb_back.onClick(event)
+                if tb_connect.onClick(event):
+                    connected = attempt_connect(ti_name.get_text(), ti_server.get_text())
+                    if connected is None:
+                        # Display name taken message
+                        pass
+                if ti_name.onClick(event):
+                    ti_current = 'name'
+                if ti_server.onClick(event):
+                    ti_current = 'server'
 
-        ti_name.update(events)
-        # if ti_name.update(events):
-        #     username = ti_name.get_text()
-        #     print(username)
+        if ti_current == 'name':
+            ti_name.update(events)
+        if ti_current == 'server':
+            ti_server.update(events)
+
+        if connected is not None:
+            SOCKET, USERNAME= connected
+            print(f"'{USERNAME}' connected")
+            # TODO: Change screens to lobby screen?
 
         WINDOW.fill(BG_COLOUR)
         ti_name.draw(WINDOW)
+        ti_server.draw(WINDOW)
         pt_name.draw(WINDOW)
         pt_len.draw(WINDOW)
         pt_server.draw(WINDOW)
-
+        tb_connect.draw(WINDOW, pos)
         tb_back.draw(WINDOW, pos)
 
         pygame.display.flip()
@@ -383,6 +417,38 @@ def mp_connect():
 
 
 
+# TODO: Move to helper functions section
+
+# Attempts to connect to the server address with the given name
+def attempt_connect(name: str, server: str) -> socket.socket:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server = server.split(':')
+    ADDR, PORT = server[0], int(server[1])
+    sock.connect((ADDR,PORT))
+    json_name = {'name': name}
+    sendJSON(sock, json_name)
+
+    while True:
+        try:
+            data = recvJSON(sock)
+        except:
+            continue
+        break
+
+    if data['status'] == 1:
+        return sock, name
+    return None
+
+
+# Receives socket data and converts from str to JSON (dict)
+def recvJSON(sock: socket) -> dict:
+    data = json.loads(sock.recv(1024).decode('utf-8'))
+    return data
+
+
+# Sends socket data after converting from JSON (dict) to string
+def sendJSON(sock: socket, data) -> None:
+    sock.send(json.dumps(data).encode('utf-8'))
 
 
 
@@ -392,11 +458,7 @@ def mp_connect():
 
 
 
-
-
-
-
-
+# ! Helper Funcitons ---------------------------------------------------------------- #
 
 # Draw top pile card(s)
 def draw_top_pile(top: list[Move], pcpa: dict) -> None:
@@ -529,6 +591,9 @@ def __playerCardsPosAngle(game: Game, players: list[Player]):
 
 # Quit game
 def quit_game():
+    if SOCKET is not None:
+        json = {'name': USERNAME, 'disconnect': True}
+        sendJSON(SOCKET, json)
     pygame.quit()
     sys.exit()
     # quit()

@@ -10,12 +10,15 @@ CARD_W, CARD_H = 691//8, 1056//8
 
 class Card():
 
-    def __init__(self, rank, value, suit):
+    def __init__(self, rank, value, suit, nopygame=False):
         self.__rank = rank
         self.__value = value
         self.__suit = suit
         self.__kingHearts = self.__isKingHearts()
-        self.__img = pygame.transform.scale(pygame.image.load("resources/cards/" + self.value + self.suit[0] + ".png").convert_alpha(), (CARD_W, CARD_H))
+        if nopygame:
+            self.__img = None
+        else:
+            self.__img = pygame.transform.scale(pygame.image.load("resources/cards/" + self.value + self.suit[0] + ".png").convert_alpha(), (CARD_W, CARD_H))
 
     def __repr__(self):
         return f"<{self.__value} of {self.__suit} ({self.__rank})>"
