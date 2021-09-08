@@ -3,9 +3,10 @@ player.py for Presidents and Insects Python Card Game
 Noah Correa
 """
 
-from move import Move
+from src.move import Move
+from src.card import Card
 
-class Player(object):
+class Player():
 
     __id = 0
 
@@ -13,16 +14,19 @@ class Player(object):
     def generate_id(cls):
         Player.__id += 1
         return Player.__id
+    
+    @classmethod
+    def reset_id(cls):
+        Player.__id = 0
 
-    def __init__(self, name):
-        self.__id = Player.generate_id()
-        self.__name = name
-        self.__role = "Citizen"
-        self.__hand = []
-        self.__move = []
-        self.__moveRank = 0
-        self.__passed = 0
-        self.__isBot = 0
+    def __init__(self, name: str):
+        self.__id: int = Player.generate_id()
+        self.__name: str = name
+        self.__role: str = "Citizen"
+        self.__hand: list[Card] = []
+        self.__move: list[Card] = []
+        self.__moveRank: int = 0
+        self.__passed: int = 0
 
     def __str__(self):
         return f"Player: {self.name}, ID: {self.id}, Role: {self.role}."
@@ -61,15 +65,15 @@ class Player(object):
 
     @property
     def isBot(self):
-        return self.__isBot
+        return False
 
     def resetPassed(self):
         self.__passed = 0
 
-    def setRole(self, role):
+    def setRole(self, role: str):
         self.__role = role
 
-    def setHand(self, hand):
+    def setHand(self, hand: list[Card]):
         self.__hand = hand
         self.sortHand()
 
@@ -91,19 +95,19 @@ class Player(object):
             ret += f"{i+1}. {str(self.move[i])}\n"
         print(ret)
 
-    def addInvalidMove(self, move):
-        if not move.noMove:
+    def addInvalidMove(self, move: list[Card]):
+        if not move.passed:
             self.hand.extend(move.cards)
             self.sortHand()
 
     # Adds given card to player's hand
-    def addCardHand(self, card):
+    def addCardHand(self, card: Card):
         self.hand.append(card)
         self.sortHand()
 
     # Adds a card from the players hand to their move cards
-    def addCardMove(self, i):
-        print(f"{self.name} is trying to add index: {i} from hand={[str(card) for card in self.hand]} and move={[str(card) for card in self.move]}")
+    def addCardMove(self, i: int):
+        # print(f"{self.name} is trying to add index: {i} from hand={[str(card) for card in self.hand]} and move={[str(card) for card in self.move]}")
         if self.move != [] and self.hand[i].value != self.move[0].value:
             self.hand.extend(self.move)
             self.__move = [self.hand[i]]
@@ -116,6 +120,18 @@ class Player(object):
             self.tripleSix()
             self.hand.pop(i)
             self.sortHand()
+
+    def addCardMoveHand(self, card: Card):
+        if self.move == []:
+            return
+        else:
+            self.move.remove(card)
+            self.hand.append(card)
+            self.sortHand()
+            self.tripleSix()
+            if self.move == []:
+                self.__moveRank = 0
+
 
     # Commits the card(s) in players move to the pile
     def playTurn(self):
@@ -162,7 +178,7 @@ class Player(object):
         return ret
 
     # Adds two cards to players hand
-    def addTwo(self, cards):
+    def addTwo(self, cards: list[Card]):
         for card in cards:
             self.addCardHand(card)
 
@@ -172,7 +188,7 @@ class Player(object):
             self.__moveRank = 62
 
     # Helper function to determine if cards in given list is triple sixes
-    def __isTripleSix(self, cards):
+    def __isTripleSix(self, cards: list[Card]):
         if len(cards) == 3:
             for card in cards:
                 if card.value == "6":

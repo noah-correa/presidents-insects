@@ -5,15 +5,17 @@ Noah Correa
 
 import pygame
 
-class Card(object):
+CARD_W, CARD_H = 691//8, 1056//8
+# CARD_W, CARD_H = 115, 176
+
+class Card():
 
     def __init__(self, rank, value, suit):
         self.__rank = rank
         self.__value = value
         self.__suit = suit
         self.__kingHearts = self.__isKingHearts()
-        self.__img = pygame.transform.scale(pygame.image.load("images/" + self.value + self.suit[0] + ".png"), (115, 176))
-        self.__back = pygame.image.load("images/red_back.png")
+        self.__img = pygame.transform.scale(pygame.image.load("resources/cards/" + self.value + self.suit[0] + ".png"), (CARD_W, CARD_H))
 
     def __repr__(self):
         return f"<{self.__value} of {self.__suit} ({self.__rank})>"
