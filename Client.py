@@ -10,6 +10,7 @@ from math import sin, cos, atan2, pi, sqrt
 import socket
 import json
 
+from src.status import Status
 from src.card import Card, CARD_W, CARD_H
 from src.game import Game
 from src.move import Move
@@ -17,20 +18,21 @@ from src.player import Player
 from src.bot import Bot
 from src.buttons import GREY, PlainText, TextButton, PlainImage, ImageButton, CardButton, TextInput, BG_COLOUR, BLACK, YELLOW, N, H1, H2
 
+
+# Find largest 16:9 resolution smaller than host
 def find_resolution(w,h):
     resolutions = [(3840,2160), (2560,1440), (1920,1080), (1600,900), (1366,768), (1280,720), (1152,648), (1024,576)]
     for nw, nh in resolutions:
         if nw < w and nh < h:
             return nw, nh
 
+
+# Initialise Pygame and global variables
 pygame.init()
-# WINDOW = pygame.display.set_mode((1600, 900))
 info = pygame.display.Info()
-# print(info)
 startW, startH = info.current_w, info.current_h
-lower_w, lower_h = find_resolution(startW, startH)
 displayFlags = pygame.HWSURFACE | pygame.DOUBLEBUF
-WINDOW = pygame.display.set_mode((lower_w,lower_h), flags=displayFlags)
+WINDOW = pygame.display.set_mode(find_resolution(startW, startH), flags=displayFlags)
 WINDOW_W, WINDOW_H = pygame.display.get_window_size()
 WINDOW.fill(BG_COLOUR)
 pygame.display.set_caption("Presidents and Insects")
@@ -43,14 +45,14 @@ USERNAME: str = None
 
 
 
-# ! Pygame Screens ------------------------------------------------------------------ #
-
-
-# Main menu screen
+#! Pygame Screens ------------------------------------------------------------------ #
+#* Main menu screen
 def game_intro():
     global WINDOW
     global WINDOW_W
     global WINDOW_H
+
+    serverDisconnect()
 
     clock = pygame.time.Clock()
     run = True
@@ -61,6 +63,14 @@ def game_intro():
         pt_pai = PlainText('Presidents and Insects', 100, (WINDOW_W//2,WINDOW_H//2), align='c', font=H1)
         pi_cockroach = PlainImage("resources/icons/cockroach.png", (151*2,191*2), (WINDOW_W//2,WINDOW_H//3-100), align='c')
         pos = pygame.mouse.get_pos()
+
+        WINDOW.fill(BG_COLOUR)
+        pi_cockroach.draw(WINDOW)
+        pt_pai.draw(WINDOW)
+        tb_settings.draw(WINDOW, pos)
+        tb_sp.draw(WINDOW, pos)
+        tb_mp.draw(WINDOW, pos)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
@@ -71,18 +81,11 @@ def game_intro():
                 tb_sp.onClick(event)
                 tb_mp.onClick(event)
 
-        WINDOW.fill(BG_COLOUR)
-        pi_cockroach.draw(WINDOW)
-        pt_pai.draw(WINDOW)
-        tb_settings.draw(WINDOW, pos)
-        tb_sp.draw(WINDOW, pos)
-        tb_mp.draw(WINDOW, pos)
-
         pygame.display.flip()
         clock.tick(FRAMERATE)
 
 
-# Settings screen
+#* Settings screen
 def settings():
     global WINDOW
     global WINDOW_W
@@ -96,6 +99,13 @@ def settings():
         tb_fs = TextButton('Fullscreen', 50, (WINDOW_W//2,WINDOW_H//2-30), None, align='c')
         tb_quit = TextButton('Quit Game', 50, (WINDOW_W//2,WINDOW_H//2+30), quit_game, align='c')
         pos = pygame.mouse.get_pos()
+
+        WINDOW.fill(BG_COLOUR)
+        tb_back.draw(WINDOW, pos)
+        tb_mm.draw(WINDOW, pos)
+        tb_fs.draw(WINDOW, pos)
+        tb_quit.draw(WINDOW, pos)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
@@ -111,17 +121,11 @@ def settings():
                 if tb_back.onClick(event):
                     return
 
-        WINDOW.fill(BG_COLOUR)
-        tb_back.draw(WINDOW, pos)
-        tb_mm.draw(WINDOW, pos)
-        tb_fs.draw(WINDOW, pos)
-        tb_quit.draw(WINDOW, pos)
-
         pygame.display.flip()
         clock.tick(FRAMERATE)
 
 
-# Rules screen
+#* Rules screen - CURRENTLY UNUSED
 def rules():
     global WINDOW
     global WINDOW_W
@@ -149,8 +153,7 @@ def rules():
         clock.tick(FRAMERATE)
 
 
-
-# Singleplayer number of players screen
+#* Singleplayer number of players screen
 def sp_number():
     global WINDOW
     global WINDOW_W
@@ -165,6 +168,14 @@ def sp_number():
         tb_7 = TextButton('7', 100, (WINDOW_W//2+100,WINDOW_H//2), sp_loading, params=7)
         pt_numPlayers = PlainText('Choose total number of players', 50, (WINDOW_W//2,WINDOW_H//3), align='c', font=H2)
         pos = pygame.mouse.get_pos()
+
+        WINDOW.fill(BG_COLOUR)
+        pt_numPlayers.draw(WINDOW)
+        tb_back.draw(WINDOW, pos)
+        tb_5.draw(WINDOW, pos)
+        tb_6.draw(WINDOW, pos)
+        tb_7.draw(WINDOW, pos)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
@@ -176,19 +187,11 @@ def sp_number():
                 tb_6.onClick(event)
                 tb_7.onClick(event)
 
-        WINDOW.fill(BG_COLOUR)
-        pt_numPlayers.draw(WINDOW)
-
-        tb_back.draw(WINDOW, pos)
-        tb_5.draw(WINDOW, pos)
-        tb_6.draw(WINDOW, pos)
-        tb_7.draw(WINDOW, pos)
-
         pygame.display.flip()
         clock.tick(FRAMERATE)
 
 
-# Singleplayer loading screen
+#* Singleplayer loading screen
 def sp_loading(total: int) -> None:
     global WINDOW
     global WINDOW_W
@@ -209,7 +212,7 @@ def sp_loading(total: int) -> None:
     sp_game_loop(game)
 
 
-# Game screen
+#* Game screen
 def sp_game_loop(game: Game) -> None:
     global WINDOW
     global WINDOW_W
@@ -340,7 +343,7 @@ def sp_game_loop(game: Game) -> None:
             botDelay += 1
 
         if nextTurn:
-            newRound = game.nextTurn()
+            newRound = game.newTurn()
             if newRound:
                 sound_shuffleCards = pygame.mixer.Sound('resources/audio/card_shuffle.wav')
                 sound_shuffleCards.set_volume(0.1)
@@ -350,7 +353,8 @@ def sp_game_loop(game: Game) -> None:
         pygame.display.flip()
         clock.tick(FRAMERATE)
 
-# Multiplayer load screen
+
+#* Multiplayer load screen
 def mp_connect():
     global WINDOW
     global WINDOW_W
@@ -362,7 +366,7 @@ def mp_connect():
     SOCKET, USERNAME = None, None
 
     ti_name = TextInput((325, 40), (WINDOW_W//2,WINDOW_H//3+80), max_string_length=10)
-    ti_server = TextInput((400, 40), (WINDOW_W//2,WINDOW_H//2+40), max_string_length=-1)
+    ti_server = TextInput((400, 40), (WINDOW_W//2,WINDOW_H//2+40), max_string_length=-1, initial_string="114.74.28.174:9229")
 
     ti_current = None
     connected = None
@@ -399,9 +403,10 @@ def mp_connect():
             ti_server.update(events)
 
         if connected is not None:
-            SOCKET, USERNAME= connected
-            print(f"'{USERNAME}' connected")
-            # TODO: Change screens to lobby screen?
+            SOCKET, data = connected
+            USERNAME = data.get('name')
+            lobby_screen()
+            return
 
         WINDOW.fill(BG_COLOUR)
         ti_name.draw(WINDOW)
@@ -416,29 +421,84 @@ def mp_connect():
         clock.tick(FRAMERATE)
 
 
+#* Multiplayer lobby screen
+def lobby_screen():
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
+    global SOCKET
+    global USERNAME
+
+    tb_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings)
+    tb_settings.setHover('resources/icons/menu_icon_hover.png')
+
+    clock = pygame.time.Clock()
+    run = True
+    while run:
+        pt_lobby = PlainText('Lobby', 50, (WINDOW_W//2, 25), align='c', font=H2)
+        pos = pygame.mouse.get_pos()
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                quit_game()
+            if event.type == pygame.VIDEORESIZE:
+                WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                tb_settings.onClick(event)
+
+        data = sendrecvJSON(SOCKET, {'status': Status.LOBBY})
+        players = data.get('playerlist')
+        WINDOW.fill(BG_COLOUR)
+        for i, name in enumerate(players):
+            pt_player = PlainText(name, 40, (WINDOW_W//2, 130 + 50*i), align='c', font=N)
+            pt_player.draw(WINDOW)
+        pt_lobby.draw(WINDOW)
+        tb_settings.draw(WINDOW, pos)
+
+
+        pygame.display.flip()
+        clock.tick(FRAMERATE)
+
+
+
+
+
+
+
+
+
+
+
 
 # TODO: Move to helper functions section
 
 # Attempts to connect to the server address with the given name
-def attempt_connect(name: str, server: str) -> socket.socket:
+def attempt_connect(name: str, server: str) -> tuple[socket.socket, dict]:
+    # print(f"attempt connect name: {name}")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server = server.split(':')
     ADDR, PORT = server[0], int(server[1])
     sock.connect((ADDR,PORT))
-    json_name = {'name': name}
-    sendJSON(sock, json_name)
+    json_name = {'status': Status.CONNECT, 'name': name}
+    data = sendrecvJSON(sock, json_name)
 
+    if data.get('status') == Status.VALID:
+        # print(data)
+        print(f"'{data.get('name')}' connected")
+        return sock, data
+    return None
+
+
+# Send and Receive JSON data
+def sendrecvJSON(sock:socket, data) -> dict:
+    sendJSON(sock, data)
     while True:
         try:
             data = recvJSON(sock)
         except:
             continue
         break
-
-    if data['status'] == 1:
-        return sock, name
-    return None
-
+    return data
 
 # Receives socket data and converts from str to JSON (dict)
 def recvJSON(sock: socket) -> dict:
@@ -448,10 +508,19 @@ def recvJSON(sock: socket) -> dict:
 
 # Sends socket data after converting from JSON (dict) to string
 def sendJSON(sock: socket, data) -> None:
-    sock.send(json.dumps(data).encode('utf-8'))
+    # print(type(data), data)
+    json_data = json.dumps(data, indent=4)
+    # print(json_data)
+    sock.send(json_data.encode('utf-8'))
 
-
-
+# Disconnects from server
+def serverDisconnect():
+    global SOCKET
+    global USERNAME
+    if SOCKET is not None:
+        json = {'status': Status.DISCONNECT, 'name': USERNAME}
+        sendJSON(SOCKET, json)
+        SOCKET, USERNAME = None, None
 
 
 
@@ -591,9 +660,7 @@ def __playerCardsPosAngle(game: Game, players: list[Player]):
 
 # Quit game
 def quit_game():
-    if SOCKET is not None:
-        json = {'name': USERNAME, 'disconnect': True}
-        sendJSON(SOCKET, json)
+    serverDisconnect()
     pygame.quit()
     sys.exit()
     # quit()

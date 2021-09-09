@@ -219,6 +219,9 @@ class TextInput:
         pygame.draw.rect(window, WHITE, self.rect, width=0)
         pygame.draw.rect(window, BLACK, self.rect, width=3)
         rect = self.surface.get_rect(center=self.position)
+        if self.input_string != "":
+            self.surface = self.font_object.render(self.input_string, self.antialias, self.text_color)
+
         window.blit(self.surface, rect)
 
     def onClick(self, event):

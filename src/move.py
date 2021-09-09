@@ -13,18 +13,6 @@ class Move():
         self.__kingHearts = self.__isKingHearts()
         self.__tripSix = self.__isTripSix()
 
-    # def __repr__(self):
-    #     if self.__pid == 0:
-    #         return "No Card."
-    #     ret = f"Player ID = {self.pid} played cards: [ "
-    #     if self.__passed:
-    #         ret = f"Player ID = {self.pid} passed."
-    #     else:
-    #         for card in self.cards:
-    #             ret += f"({str(card)}) "
-    #         ret += f"], Rank: {self.rank}."
-    #     return ret
-
     def __str__(self):
         if self.__pid == 0:
             return "No Card."
@@ -36,6 +24,19 @@ class Move():
                 ret += f"({str(card)}) "
             ret += f"], Rank: {self.rank}."
         return ret
+
+    def __dict__(self):
+        d = {}
+        d['pid'] = self.__pid
+        d['nCards'] = self.__nCards
+        d['rank'] = self.__rank
+        d['passed'] = self.__passed
+        d['kingHearts'] = self.__isKingHearts()
+        d['tripSix'] = self.__isTripSix()
+        d['cards'] = []
+        for card in self.__cards:
+            d['cards'].append(card.__dict__)
+        return d
 
     @property
     def pid(self):

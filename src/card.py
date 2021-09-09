@@ -20,6 +20,14 @@ class Card():
         else:
             self.__img = pygame.transform.scale(pygame.image.load("resources/cards/" + self.value + self.suit[0] + ".png").convert_alpha(), (CARD_W, CARD_H))
 
+    def __dict__(self):
+        d = {}
+        d['rank'] = self.__rank
+        d['value'] = self.__value
+        d['suit'] = self.suit
+        d['kingHearts'] = self.__isKingHearts()
+        return d
+
     def __repr__(self):
         return f"<{self.__value} of {self.__suit} ({self.__rank})>"
 

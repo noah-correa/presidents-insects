@@ -120,6 +120,8 @@ class Game(object):
 
     # Check if name is already in use
     def __checkName(self, name) -> bool:
+        if name == "":
+            return False
         for ci in self.players:
             if self.players[ci].name == name:
                 return True
@@ -196,7 +198,7 @@ class Game(object):
         self.__deck = Deck()
 
     # Finds id of player of next turn
-    def __nextTurnPlayer(self) -> int:
+    def __newTurnPlayer(self) -> int:
         pid = self.currPlayer
         # Checks if someone who didnt play the last move hasnt passed and has cards
         for _ in range(1, self.nTotal):
@@ -208,7 +210,7 @@ class Game(object):
         return 0
 
     # Finds id of next player if current player is now out
-    def __nextDefaultPlayer(self) -> int:
+    def __newDefaultPlayer(self) -> int:
         if self.players[self.topMove.pid].nCards != 0:
             return self.topMove.pid
         pid = self.topMove.pid
@@ -263,9 +265,19 @@ class Game(object):
             return False
         else:
             newPlayer = Player(name)
-            self.players[newPlayer.id] = newPlayer
+            self.__players[newPlayer.id] = newPlayer
             self.__nPlayers += 1
             return True
+
+    # Deletes an active player
+    def delPlayer(self, name) -> bool:
+        pid = self.getPlayerId(name)
+        if pid != -1:
+            self.__players.pop(pid)
+            self.__nTotal -= 1
+            self.__nPlayers -= 1
+            return True
+        return False
 
     # Sets up for a new game (new deal of hands)
     def newGame(self) -> None:
@@ -299,7 +311,7 @@ class Game(object):
         self.__prevMoves = []
 
     # Updates Game object for next turn
-    def nextTurn(self) -> bool:
+    def newTurn(self) -> bool:
         print(f"==== Game {self.gameNumber}, Round {self.roundNumber}, Turn {self.turnNumber} ====")
         print(self.topMove)
 
@@ -313,11 +325,11 @@ class Game(object):
             return True
 
         # Otherwise, get the next player
-        next_pid = self.__nextTurnPlayer()
+        next_pid = self.__newTurnPlayer()
         # Check if no next player
         if next_pid == 0:
             # If no next player, start next round
-            self.__currPlayer = self.__nextDefaultPlayer()
+            self.__currPlayer = self.__newDefaultPlayer()
             self.newRound()
         else:
             # Otherwise, go to next player

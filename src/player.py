@@ -31,6 +31,22 @@ class Player():
     def __str__(self):
         return f"Player: {self.name}, ID: {self.id}, Role: {self.role}."
 
+    def __dict__(self):
+        d = {}
+        d['id'] = self.__id
+        d['name'] = self.__name
+        d['role'] = self.__role
+        d['nCards'] = self.nCards
+        d['hand'] = []
+        for card in self.__hand:
+            d['hand'].append(card.__dict__)
+        d['move'] = []
+        for card in self.__move:
+            d['move'].append(card.__dict__)
+        d['moveRank'] = self.__moveRank
+        d['passed'] = self.__passed
+        return d
+
     @property
     def id(self):
         return self.__id

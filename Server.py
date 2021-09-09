@@ -6,15 +6,34 @@ from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR, timeo
 import urllib.request
 import json
 import threading
+import msvcrt
+import select
 # import pygame
 
 from src.game import Game
 from src.player import Player
+from src.status import Status
 
 
-PLAYERS = {}                        # holds active players in format { <username>: [<socket>, <address>], ...}
+PLAYERS = {}                        # holds active players in format { <username>: [<socket>, <address>, <Player>], ...}
 T_LOCK = threading.Condition()      # thread lock
+GAME = None
+SHUTDOWN = False
 # pygame.init()
+
+
+class CmdThread(threading.Thread):
+    def __init__(self, input_cbk = None, name='cl-input-thread'):
+        self.input_cbk = input_cbk
+        super(CmdThread, self).__init__(name=name)
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        while True:
+            self.input_cbk(input()) #waits to get input + Return
+
+
 
 def getIP():
     return json.loads(urllib.request.urlopen('https://jsonip.com/').read())['ip']
@@ -22,12 +41,12 @@ def getIP():
 def start_server():
     global PLAYERS
     global T_LOCK
+    global GAME
 
     if len(sys.argv) == 1:
         ADDR = 'localhost'
         PORT = 9229
     elif len(sys.argv) == 2:
-        # ADDR = sys.argv[1]
         ADDR = ''
         PORT = int(sys.argv[1])
     else:
@@ -44,6 +63,7 @@ def start_server():
 
     GAME = Game(nopygame=True)
 
+    print("ADMIN COMMANDS:\n\t- 'q': Quit the server\n\t- 's': Start a game")
     print("Waiting for players to join")
     while True:
         try:
@@ -51,27 +71,45 @@ def start_server():
             playerSocket, playerAddress = SOCKET.accept()
             print(f"{playerAddress} connected")
             threading.Thread(target=playerThread, args= (playerSocket, playerAddress)).start()
+
         except BlockingIOError:
             continue
         except OSError:
             break
         finally:
-            time.sleep(0.5)
+            # Handle server input
+            if msvcrt.kbhit():
+                c = msvcrt.getch().decode()
+                # print(f"kbhit: {c}")
+                if c == 'q':
+                    quit_server()
+                elif c == 's':
+                    if 5 <= len(list(PLAYERS.keys())) <= 7:
+                        start_game()
+                    else:
+                        print("Cannot start game! Must have 5-7 players")
+            time.sleep(0.1)
+
 
     SOCKET.close()
 
 
-# ! THREADED FUNCTION
-def playerThread(playerSocket, playerAddress):
+# THREADED FUNCTION
+def playerThread(playerSocket: socket, playerAddress):
     global PLAYERS
     global T_LOCK
+    global SHUTDOWN
+    global GAME
 
-    playerName = newPlayerThread(playerSocket, playerAddress)
+    # playerSocket.setblocking(False)
+    playerName = None
     
     # Handle player commands
     while True:
         # Handle incoming client request
         with T_LOCK:
+            if SHUTDOWN:
+                return
             try:
                 # Receive command from client
                 data = recvJSON(playerSocket)
@@ -79,77 +117,99 @@ def playerThread(playerSocket, playerAddress):
                 T_LOCK.notify()
                 continue
 
-            # print(f"{user} issued {code} command")
-            print(f"RECEIVED: {data}")
-            # print(f"{data.get('status')}")
-            if data.get('disconnect') == 1:
+            # print(f"RECEIVED: {data}")
+            code = data.get('status')
+            response = {}
+            # Handle client responses
+            
+            # Client connect to server
+            if code == Status.CONNECT:
+                playerName = data.get('name')
+                response = playerConnect(playerSocket, playerAddress, playerName)
+            
+            # Check if player disconnected from server
+            elif code == Status.DISCONNECT:
+                GAME.delPlayer(playerName)
                 PLAYERS.pop(data['name'])
+                print(f"'{playerName}' disconnected")
                 print(f"{len(PLAYERS)} total players {list(PLAYERS.keys())}")
+                return
+
+            # Client is connected, requesting lobby list
+            elif code == Status.LOBBY:
+                response = {'status': Status.LOBBY, 'playerlist': list(PLAYERS.keys())}
+
+
 
 
             # Send response message back to client
-            # sendJSON(playerSocket, response)
-
+            sendJSON(playerSocket, response)
             T_LOCK.notify()
-                    
+
+
+
+def playerConnect(sock, addr, name):
+    global PLAYERS
+    
+    # Player entered a name already active
+    if PLAYERS.get(name) != None:
+        json_status = {'status': Status.INVALID, 'errmsg': f"Player '{name}' already exists"}
+        sendJSON(sock, json_status)
+
+    # Player enters a new name
+    else:
+        # Send OK message
+        validName = GAME.addNewPlayer(name)
+        if not validName:
+            json_status = {'status': Status.INVALID, 'errmsg': f"Player '{name}' is invalid (must be alphanumeric only)"}
+        else:
+            playerObj = Player(name)
+            # json_status = {'status': Status.VALID, 'player': playerObj.__dict__()}
+            json_status = {'status': Status.VALID, 'name': name}
+            # Add player to active players
+            PLAYERS[name] = [sock, addr, playerObj]
+            print(f"  -> {name} logged into server from {addr[0]}:{addr[1]}")
+            print(f"{len(PLAYERS)} total players {list(PLAYERS.keys())}")
+
+    return json_status
+      
+def updateLobby():
+    global PLAYERS
+    names = list(PLAYERS.keys())
+    for sock,_,_ in PLAYERS.values():
+        pass
     return
 
+# Starts the game
+def start_game():
+    print("Starting game")
+    pass
 
 
-# ! THREADED FUNCTION
-def newPlayerThread(playerSocket, playerAddress):
+# Quits the server
+def quit_server():
     global PLAYERS
-    global T_LOCK
+    global GAME
+    global SHUTDOWN
+    json = {'status': Status.SHUTDOWN}
+    for _, (sock, _, _) in PLAYERS.items():
+        sendJSON(sock, json)
+    SHUTDOWN = True
+    sys.exit()
 
-    playerName = None
-    # Loop while client is not logged into server
-    while True:
-        with T_LOCK:  
-            # Receive player's name
-            try:
-                data = recvJSON(playerSocket)
-            except:
-                T_LOCK.notify()
-                continue
-
-            playerName = data['name']
-            # print(f"Received: {playerName}")
-            # Player entered a name already active
-            if PLAYERS.get(playerName) != None:
-                print(f"Player '{playerName}' already exists")
-                # Send BAD message
-                json_status = {'status': 0}
-                sendJSON(playerSocket, json_status)
-
-            # Player enters a new name
-            else:
-                # Send OK message
-                json_status = {'status': 1}
-                sendJSON(playerSocket, json_status)
-                break
-            T_LOCK.notify()
-
-    # Add player to active players
-    PLAYERS[playerName] = [playerSocket, playerAddress, Player(playerName)]
-    print(f"\t-> {playerName} logged into server from {playerAddress[0]}:{playerAddress[1]}")
-
-    print(f"{len(PLAYERS)} total players {list(PLAYERS.keys())}")
-
-    return playerName
-
-    
 
 def recvJSON(sock: socket) -> dict:
     data = json.loads(sock.recv(1024).decode('utf-8'))
     return data
 
 def sendJSON(sock: socket, data) -> None:
-    sock.send(json.dumps(data).encode('utf-8'))
-
-
+    # print(type(data), data)
+    json_data = json.dumps(data, indent=4)
+    # print(json_data)
+    sock.send(json_data.encode('utf-8'))
 
 
 
 if __name__ == "__main__":
     start_server()
-    sys.exit()
+    quit_server()
