@@ -1,11 +1,15 @@
-"""
-main.py for Presidents and Insects Python Card Game
-Noah Correa
-"""
+'''
+File:           Client.py
+Author:         Noah Correa
+Date:           09/9/21
+Description:    Client for Presidents and Insects
+'''
+
 import sys
+import time
 import pygame
-from time import sleep
-from typing import Text, Union
+# from time import sleep
+from typing import Union
 from math import sin, cos, atan2, pi, sqrt
 import socket
 import json
@@ -16,7 +20,7 @@ from src.game import Game
 from src.move import Move
 from src.player import Player
 from src.bot import Bot
-from src.buttons import GREY, PlainText, TextButton, PlainImage, ImageButton, CardButton, TextInput, BG_COLOUR, BLACK, YELLOW, N, H1, H2
+from src.buttons import GREY, PlainText, TextButton, PlainImage, ImageButton, CardButton, TextInput, BG_COLOUR, BLACK, YELLOW, RED, N, H1, H2
 
 
 # Find largest 16:9 resolution smaller than host
@@ -42,7 +46,7 @@ pygame.display.flip()
 FRAMERATE = 120
 SOCKET: socket.socket = None
 USERNAME: str = None
-
+BUFSIZE = 1024*2
 
 
 #! Pygame Screens ------------------------------------------------------------------ #
@@ -370,6 +374,7 @@ def mp_connect():
 
     ti_current = None
     connected = None
+    connect_attempt = False
     clock = pygame.time.Clock()
     run = True
     while run:
@@ -378,6 +383,8 @@ def mp_connect():
         pt_name = PlainText('Enter your name:', 50, (WINDOW_W//2,WINDOW_H//3), align='c', font=H2)
         pt_len = PlainText('Max 10 characters', 30, (WINDOW_W//2,WINDOW_H//3+40), align='c', font=N)
         pt_server = PlainText('Enter server', 50, (WINDOW_W//2,WINDOW_H//2), align='c', font=H2)
+        pt_error = PlainText('Unable to connect to server', 30, (WINDOW_W//2, WINDOW_H//2+160), align='c', font=N)
+        
         pos = pygame.mouse.get_pos()
         events = pygame.event.get()
         for event in events:
@@ -388,10 +395,11 @@ def mp_connect():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 tb_back.onClick(event)
                 if tb_connect.onClick(event):
+                    connect_attempt = True
                     connected = attempt_connect(ti_name.get_text(), ti_server.get_text())
-                    if connected is None:
-                        # Display name taken message
-                        pass
+                    # if connected is None:
+                    #     # Display name taken message
+                    #     pass
                 if ti_name.onClick(event):
                     ti_current = 'name'
                 if ti_server.onClick(event):
@@ -408,6 +416,7 @@ def mp_connect():
             lobby_screen()
             return
 
+
         WINDOW.fill(BG_COLOUR)
         ti_name.draw(WINDOW)
         ti_server.draw(WINDOW)
@@ -416,6 +425,8 @@ def mp_connect():
         pt_server.draw(WINDOW)
         tb_connect.draw(WINDOW, pos)
         tb_back.draw(WINDOW, pos)
+        if connected is None and connect_attempt:
+            pt_error.draw(WINDOW, colour=RED)
 
         pygame.display.flip()
         clock.tick(FRAMERATE)
@@ -431,13 +442,46 @@ def lobby_screen():
 
     tb_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings)
     tb_settings.setHover('resources/icons/menu_icon_hover.png')
-
+    
     clock = pygame.time.Clock()
     run = True
     while run:
         pt_lobby = PlainText('Lobby', 50, (WINDOW_W//2, 25), align='c', font=H2)
+        
         pos = pygame.mouse.get_pos()
+        WINDOW.fill(BG_COLOUR)
+        pt_lobby.draw(WINDOW)
+        tb_settings.draw(WINDOW, pos)
         events = pygame.event.get()
+
+        # Get the Lobby status
+        try:
+            data = sendrecvJSON(SOCKET, {'status': Status.LOBBY})
+        except:
+            continue
+        code = data.get('status')
+        if code == Status.LOBBY:
+            players = data.get('playerlist')
+            for i, name in enumerate(players):
+                pt_player = PlainText(name, 40, (WINDOW_W//2, 130 + 50*i), align='c', font=N)
+                pt_player.draw(WINDOW)
+            # print(data.get('player'))
+            if data.get('player') is not None:
+                player = loadPlayer(data.get('player'))
+                print(player)
+                # time.sleep(10)
+                mp_game_loop(player)
+                return
+        # # Check if game started
+        # elif code == Status.PLAYER:
+        #     print(data)
+
+        elif code == Status.SHUTDOWN:
+            print(f"Server shutdown or connection to server was lost")
+            game_intro()
+            return
+        
+        # Pygame event loop
         for event in events:
             if event.type == pygame.QUIT:
                 quit_game()
@@ -445,23 +489,177 @@ def lobby_screen():
                 WINDOW_W, WINDOW_H = pygame.display.get_window_size()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 tb_settings.onClick(event)
-
-        data = sendrecvJSON(SOCKET, {'status': Status.LOBBY})
-        players = data.get('playerlist')
-        WINDOW.fill(BG_COLOUR)
-        for i, name in enumerate(players):
-            pt_player = PlainText(name, 40, (WINDOW_W//2, 130 + 50*i), align='c', font=N)
-            pt_player.draw(WINDOW)
-        pt_lobby.draw(WINDOW)
-        tb_settings.draw(WINDOW, pos)
-
+        
 
         pygame.display.flip()
         clock.tick(FRAMERATE)
 
 
 
+# Multiplayer game loop
+def mp_game_loop(player: Player):
+    global WINDOW
+    global WINDOW_W
+    global WINDOW_H
+    global SOCKET
+    global USERNAME
 
+    SOCKET.settimeout(1)
+    print("STARTED MP GAME LOOP")
+    # time.sleep(10)
+    sound_playCard = pygame.mixer.Sound('resources/audio/play_card.wav')
+    sound_playCard.set_volume(0.1)
+    tb_settings = ImageButton('resources/icons/menu_icon.png', (50,50), (0,0), settings)
+    tb_settings.setHover('resources/icons/menu_icon_hover.png')
+    
+
+
+    # # Create player and set the hand
+    # player: Player = game.getPlayer('Player 1')
+    i = 0
+    clock = pygame.time.Clock()
+    run = True
+    while run:
+        print(f"looping {i}")
+        i += 1
+        WINDOW.fill(BG_COLOUR)
+        tb_settings.draw(WINDOW)
+        # print("sending GAME")
+        # try:
+        #     sendJSON(SOCKET, {'status': Status.GAME})
+        #     data = recvJSON(SOCKET)
+        try:
+            data = sendrecvJSON(SOCKET, {'status': Status.GAME})
+        except:
+            print("nothing received")
+            # for event in pygame.event.get():
+            #     if event.type == pygame.QUIT:
+            #         quit_game()
+            #     if event.type == pygame.VIDEORESIZE:
+            #         WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+            #     if event.type == pygame.MOUSEBUTTONDOWN:
+            #         tb_settings.onClick(event)
+            continue
+        # print(f"receiving {data.get('status')}")
+        # except:
+        #     continue
+        # Draw all default stuff
+        if data.get('game') == {}:
+            print("empty game")
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit_game()
+                if event.type == pygame.VIDEORESIZE:
+                    WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    tb_settings.onClick(event)
+            continue
+        else:
+            game = data.get('game')
+
+        
+        game_info = f"Game {game.get('gameNumber')} Round {game.get('roundNumber')} Turn {game.get('turnNumber')}"
+        game_round_turn_text = PlainText(game_info, 40, (WINDOW_W//2, 20), align='c', font=H2)
+        game_round_turn_text.draw(WINDOW)
+        tb_pass = TextButton('Pass', 50, (WINDOW_W-5, WINDOW_H), None, align='br')
+
+        pos = pygame.mouse.get_pos()
+        tb_settings.draw(WINDOW, pos)
+
+        # Draw player cards
+        currPlayerID = game.get('game')
+        draw_player_cards(pos, player)
+
+        # Draw other players cards
+        # pcpa = draw_other_cards(game, player)
+
+        # Draw top move
+        # topMove: Move = game.topMove
+        # draw_top_pile(game.prevMoves, pcpa)
+        # events = pygame.event.get()
+        # for event in events:
+        #     if event.type == pygame.QUIT:
+        #         quit_game()
+        #     if event.type == pygame.MOUSEBUTTONDOWN:
+        #         tb_settings.onClick(event)
+
+
+        # Game logic
+
+        # # Check if not current player
+        if currPlayerID != player.id:
+            # Just handle events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit_game()
+                if event.type == pygame.VIDEORESIZE:
+                    WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    tb_settings.onClick(event)
+
+        else:
+            # Draw Pygame
+            p_hand, p_move = draw_player_cards(pos, player)
+
+            tb_play = TextButton('Play', 50, (WINDOW_W//2+CARD_W*len(player.move)//2+CARD_W,WINDOW_H-CARD_H-CARD_H//4), None, align='c')
+            # if game.playerValidMove(player):
+            #     tb_play.draw(WINDOW, pos)
+            tb_pass.draw(WINDOW, pos)
+            # Loop through events
+            for event in pygame.event.get():
+                # Check if game quit
+                if event.type == pygame.QUIT:
+                    quit_game()
+                if event.type == pygame.VIDEORESIZE:
+                    WINDOW_W, WINDOW_H = pygame.display.get_window_size()
+                # Check if mouse clicked
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    # Check if back button clicked
+                    tb_settings.onClick(event)
+
+                    playerMove = None
+                    if tb_pass.onClick(event):
+                        # TODO
+                        playerMove = player.passTurn()
+                    elif tb_play.onClick(event):
+                        # TODO
+                        playerMove = player.playTurn()
+
+
+                    # if playerMove is not None:
+                    #     isValidMove = game.validMove(playerMove)
+
+                    #     if isValidMove:
+                    #         game.addTopMove(playerMove)
+                    #         if not playerMove.passed:
+                    #             sound_playCard.play()
+                    #         nextTurn = True
+                    #     else:
+                    #         currPlayer.addInvalidMove(playerMove)
+
+                    # Check which card was clicked
+                    for i, card in enumerate(p_hand):
+                        if card.onClick(event):
+                            sound_playCard.play()
+                            player.addCardMove(i)
+
+                    for i, card in enumerate(p_move):
+                        if card.onClick(event):
+                            sound_playCard.play()
+                            player.addCardMoveHand(card.getCard())
+        # # Check if its the next turn 
+        # if nextTurn:
+        #     # Check if the next turn starts a new round
+        #     newRound = game.newTurn()
+        #     if newRound:
+        #         sound_shuffleCards = pygame.mixer.Sound('resources/audio/card_shuffle.wav')
+        #         sound_shuffleCards.set_volume(0.1)
+        #         sound_shuffleCards.play()
+        #         pygame.time.delay(500)
+
+
+        pygame.display.flip()
+        clock.tick(FRAMERATE)
 
 
 
@@ -476,17 +674,49 @@ def lobby_screen():
 def attempt_connect(name: str, server: str) -> tuple[socket.socket, dict]:
     # print(f"attempt connect name: {name}")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(5)
     server = server.split(':')
     ADDR, PORT = server[0], int(server[1])
-    sock.connect((ADDR,PORT))
-    json_name = {'status': Status.CONNECT, 'name': name}
-    data = sendrecvJSON(sock, json_name)
+    try:
+        sock.connect((ADDR,PORT))
+        json_name = {'status': Status.CONNECT, 'name': name}
+        data = sendrecvJSON(sock, json_name)
 
-    if data.get('status') == Status.VALID:
-        # print(data)
-        print(f"'{data.get('name')}' connected")
-        return sock, data
-    return None
+        if data.get('status') == Status.VALID:
+            # print(data)
+            print(f"'{data.get('name')}' connected")
+            return sock, data
+    except:
+        print(f"Could not connect to server {server}")
+        return None
+
+
+# Loads a player into Player object
+def loadPlayer(pdata: dict) -> Player:
+    id = pdata.get('id')
+    name = pdata.get('name')
+    role = pdata.get('role')
+    moveRank = pdata.get('moveRank')
+    passed = pdata.get('passed')
+    hand = []
+    for cdata in pdata.get('hand'):
+        rank = cdata.get('rank')
+        value = cdata.get('value')
+        suit = cdata.get('suit')
+        kh = cdata.get('kingHearts')
+        card = Card(rank, value, suit, kingHearts=kh)
+        hand.append(card)
+    move = []
+    for cdata in pdata.get('move'):
+        rank = cdata.get('rank')
+        value = cdata.get('value')
+        suit = cdata.get('suit')
+        kh = cdata.get('kingHearts')
+        card = Card(rank, value, suit, kingHearts=kh)
+        move.append(card)
+
+    player = Player(name, id=id, role=role, hand=hand, move=move, moveRank=moveRank, passed=passed)
+    return player
 
 
 # Send and Receive JSON data
@@ -502,7 +732,12 @@ def sendrecvJSON(sock:socket, data) -> dict:
 
 # Receives socket data and converts from str to JSON (dict)
 def recvJSON(sock: socket) -> dict:
-    data = json.loads(sock.recv(1024).decode('utf-8'))
+    while True:
+        try:
+            data = json.loads(sock.recv(BUFSIZE).decode('utf-8'))
+            break
+        except:
+            continue
     return data
 
 

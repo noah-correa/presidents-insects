@@ -1,7 +1,9 @@
-"""
-player.py for Presidents and Insects Python Card Game
-Noah Correa
-"""
+'''
+File:           player.py
+Author:         Noah Correa
+Date:           09/9/21
+Description:    Presidents and Insects Player Class
+'''
 
 from src.move import Move
 from src.card import Card
@@ -19,14 +21,27 @@ class Player():
     def reset_id(cls):
         Player.__id = 0
 
-    def __init__(self, name: str):
-        self.__id: int = Player.generate_id()
+    def __init__(self, name: str, id=None, role="Citizen", hand=[], move=[], moveRank=0, passed=0):
+        if id is None:
+            self.__id: int = Player.generate_id()
+        else:
+            self.__id: int = id
         self.__name: str = name
-        self.__role: str = "Citizen"
-        self.__hand: list[Card] = []
-        self.__move: list[Card] = []
-        self.__moveRank: int = 0
-        self.__passed: int = 0
+        self.__role: str = role
+        self.__hand: list[Card] = hand
+        self.__move: list[Card] = move
+        self.__moveRank: int = moveRank
+        self.__passed: int = passed
+
+    def __repr__(self):
+        ret = f'id = {self.__id}\n'
+        ret += f'name = {self.__name}\n'
+        ret += f'role = {self.__role}\n'
+        ret += f'hand = {self.__hand}\n'
+        ret += f'move = {self.__move}\n'
+        ret += f'moveRank = {self.__moveRank}\n'
+        ret += f'passed = {self.__passed}\n'
+        return ret
 
     def __str__(self):
         return f"Player: {self.name}, ID: {self.id}, Role: {self.role}."
@@ -39,10 +54,10 @@ class Player():
         d['nCards'] = self.nCards
         d['hand'] = []
         for card in self.__hand:
-            d['hand'].append(card.__dict__)
+            d['hand'].append(card.__dict__())
         d['move'] = []
         for card in self.__move:
-            d['move'].append(card.__dict__)
+            d['move'].append(card.__dict__())
         d['moveRank'] = self.__moveRank
         d['passed'] = self.__passed
         return d

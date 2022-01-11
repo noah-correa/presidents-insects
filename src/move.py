@@ -1,13 +1,15 @@
-"""
-move.py for Presidents and Insects Python Card Game
-Noah Correa
-"""
+'''
+File:           move.py
+Author:         Noah Correa
+Date:           09/9/21
+Description:    Presidents and Insects Move Class
+'''
 
 class Move():
-    def __init__(self, pid, cards=None, rank=0):
+    def __init__(self, pid, cards=[], rank=0):
         self.__pid = pid
         self.__cards = cards
-        self.__nCards = 0 if cards is None else len(cards)
+        self.__nCards = len(cards)
         self.__rank = rank
         self.__passed = not cards
         self.__kingHearts = self.__isKingHearts()
@@ -35,7 +37,7 @@ class Move():
         d['tripSix'] = self.__isTripSix()
         d['cards'] = []
         for card in self.__cards:
-            d['cards'].append(card.__dict__)
+            d['cards'].append(card.__dict__())
         return d
 
     @property
@@ -67,8 +69,6 @@ class Move():
         return self.__tripSix
 
     def __isKingHearts(self):
-        if self.cards is None:
-            return 0
         for card in self.cards:
             if card.kingHearts:
                 return 1

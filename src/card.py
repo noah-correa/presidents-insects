@@ -1,7 +1,9 @@
-"""
-card.py for Presidents and Insects Python Card Game
-Noah Correa
-"""
+'''
+File:           card.py
+Author:         Noah Correa
+Date:           09/9/21
+Description:    Presidents and Insects Card Class
+'''
 
 import pygame
 
@@ -10,11 +12,11 @@ CARD_W, CARD_H = 691//8, 1056//8
 
 class Card():
 
-    def __init__(self, rank, value, suit, nopygame=False):
+    def __init__(self, rank, value, suit, kingHearts=None, nopygame=False):
         self.__rank = rank
         self.__value = value
         self.__suit = suit
-        self.__kingHearts = self.__isKingHearts()
+        self.__kingHearts = self.__isKingHearts() if kingHearts is None else kingHearts
         if nopygame:
             self.__img = None
         else:

@@ -1,3 +1,10 @@
+'''
+File:           buttons.py
+Author:         Noah Correa
+Date:           09/9/21
+Description:    Presidents and Insects Pygame supported Buttons/Text Classes
+'''
+
 import pygame
 import os.path
 
@@ -14,6 +21,7 @@ BLACK = (0, 0, 0)
 GREY = (128, 128, 128)
 WHITE = (255, 255, 255)
 YELLOW = (255, 204, 0)
+RED = (255, 0, 0)
 
 H1 = 'resources/fonts/casino.3d-filled-marquee-italic.ttf'
 H2 = 'resources/fonts/casino.3d-lines-regular.ttf'

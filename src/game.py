@@ -1,7 +1,10 @@
-"""
-game.py for Presidents and Insects Python Card Game
-Noah Correa
-"""
+'''
+File:           game.py
+Author:         Noah Correa
+Date:           09/9/21
+Description:    Presidents and Insects Game class
+'''
+
 import sys
 from random import sample
 
@@ -11,17 +14,20 @@ from src.bot import Bot
 from src.move import Move
 
 
-ROLES = ['President', 'Vice-President', 'Citizen', 'Insect', 'Giga-Insect']
 
 class Game(object):
+    
+    ROLES = ['President', 'Vice-President', 'Citizen', 'Insect', 'Giga-Insect']
+    
     def __init__(self, nopygame=False):
         #region Game Attributes
-        self.__deck: Deck = Deck(nopygame)
+        self.__nopygame = nopygame
+        self.__deck: Deck = Deck(nopygame=nopygame)
         self.__nTotal: int = 0 
         self.__nPlayers: int = 0
         self.__nBots: int = 0
-        self.__players: dict[int, Player] = {}
-        self.__roles: dict = {ROLES[0] : None, ROLES[1] : None, ROLES[2] : [], ROLES[3] : None, ROLES[4] : None}
+        self.__players: dict[int, Player] = {}  # {int: Player}
+        self.__roles: dict = {self.ROLES[0] : None, self.ROLES[1] : None, self.ROLES[2] : [], self.ROLES[3] : None, self.ROLES[4] : None}
         self.__nHand: int = 0
         self.__nSpare: int = 0
         self.__winners: list = []
@@ -118,10 +124,28 @@ class Game(object):
         ret += f"prevMoves = {self.__prevMoves}\n\t"
         return ret
 
+    # Dict representation
+    def __dict__(self):
+        d = {}
+        d['gameNumber'] = self.__gameNumber
+        d['roundNumber'] = self.__roundNumber
+        d['turnNumber'] = self.__turnNumber
+        d['currPlayer'] = self.__currPlayer
+        d['nTotal'] = self.__nTotal
+        d['nPlayers'] = self.__nPlayers
+        d['topMove'] = self.__topMove.__dict__()
+        d['prevMoves'] = []
+        for move in self.__prevMoves:
+            d['prevMoves'].append(move.__dict__())
+        d['players'] = []
+        for id, player in self.__players.items():
+            d['players'].append({'id': id, 'player': player.__dict__()})
+        return d
+
     # Check if name is already in use
     def __checkName(self, name) -> bool:
         if name == "":
-            return False
+            return True
         for ci in self.players:
             if self.players[ci].name == name:
                 return True
@@ -135,19 +159,19 @@ class Game(object):
         if len(spares) != self.nSpare:
             raise Exception("Too many spare cards in deck")
         else:
-            if len(self.roles[ROLES[2]]) >= self.nSpare:
-                citizens = sample(self.roles[ROLES[2]], self.nSpare)
+            if len(self.roles[self.ROLES[2]]) >= self.nSpare:
+                citizens = sample(self.roles[self.ROLES[2]], self.nSpare)
                 for i, pid in enumerate(citizens):
                     self.players[pid].addCardHand(spares[i])
             else:
-                citizens = sample(self.roles[ROLES[2]], len(self.roles[ROLES[2]]))
+                citizens = sample(self.roles[self.ROLES[2]], len(self.roles[self.ROLES[2]]))
                 for i, pid in enumerate(citizens):
                     self.players[pid].addCardHand(spares[i])
                 remaining = spares[len(citizens):]
                 for i, card in enumerate(remaining):
-                    self.players[self.roles[ROLES[i+3]]].addCardHand(card)
+                    self.players[self.roles[self.ROLES[i+3]]].addCardHand(card)
                     if i == 2:
-                        self.players[self.roles[ROLES[1]]].addCardHand(card)
+                        self.players[self.roles[self.ROLES[1]]].addCardHand(card)
 
     # Returns player id with 3 of clubs
     def __findFirstTurn(self) -> None:
@@ -162,16 +186,16 @@ class Game(object):
         if self.gameNumber != 0:
             self.winners.append(self.__findLastPlayer())
             # print(f"winners order: {self.winners}")
-            self.players[self.winners[0]].setRole(ROLES[0])
-            self.players[self.winners[1]].setRole(ROLES[1])
-            self.players[self.winners[-2]].setRole(ROLES[-2])
-            self.players[self.winners[-1]].setRole(ROLES[-1])
+            self.players[self.winners[0]].setRole(self.ROLES[0])
+            self.players[self.winners[1]].setRole(self.ROLES[1])
+            self.players[self.winners[-2]].setRole(self.ROLES[-2])
+            self.players[self.winners[-1]].setRole(self.ROLES[-1])
             for pid in self.winners[2:-2]:
-                self.players[pid].setRole(ROLES[2])
+                self.players[pid].setRole(self.ROLES[2])
         
-        self.__roles[ROLES[2]] = []
+        self.__roles[self.ROLES[2]] = []
         for player in self.players.values():
-            if player.role == ROLES[2]:
+            if player.role == self.ROLES[2]:
                 self.roles[player.role].append(player.id)
             else:
                 self.roles[player.role] = player.id
@@ -195,7 +219,7 @@ class Game(object):
 
     # Resets deck for new round
     def __resetDeck(self) -> None:
-        self.__deck = Deck()
+        self.__deck = Deck(self.__nopygame)
 
     # Finds id of player of next turn
     def __newTurnPlayer(self) -> int:
@@ -288,14 +312,14 @@ class Game(object):
         self.__resetDeck()
         self.__dealHands()    
         if self.gameNumber != 0:
-            highTwo = self.players[self.roles[ROLES[4]]].highTwo()
-            lowTwo = self.players[self.roles[ROLES[0]]].lowTwo()
-            highOne = self.players[self.roles[ROLES[3]]].highOne()
-            lowOne = self.players[self.roles[ROLES[1]]].lowOne()
-            self.players[self.roles[ROLES[0]]].addTwo(highTwo)
-            self.players[self.roles[ROLES[4]]].addTwo(lowTwo)
-            self.players[self.roles[ROLES[1]]].addCardHand(highOne)
-            self.players[self.roles[ROLES[3]]].addCardHand(lowOne)
+            highTwo = self.players[self.roles[self.ROLES[4]]].highTwo()
+            lowTwo = self.players[self.roles[self.ROLES[0]]].lowTwo()
+            highOne = self.players[self.roles[self.ROLES[3]]].highOne()
+            lowOne = self.players[self.roles[self.ROLES[1]]].lowOne()
+            self.players[self.roles[self.ROLES[0]]].addTwo(highTwo)
+            self.players[self.roles[self.ROLES[4]]].addTwo(lowTwo)
+            self.players[self.roles[self.ROLES[1]]].addCardHand(highOne)
+            self.players[self.roles[self.ROLES[3]]].addCardHand(lowOne)
         self.__currPlayer = self.__findFirstTurn()
         self.__gameNumber += 1
         self.__roundNumber = 0

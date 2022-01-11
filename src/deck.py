@@ -33,7 +33,7 @@ class Deck(object):
                     value = "Ace"
                 else:
                     value = str(rank)
-                self.__deck.append(Card(rank, value, suit, nopygame))
+                self.__deck.append(Card(rank, value, suit, nopygame=nopygame))
 
     def __str__(self):
         return f"Deck has {len(self.__deck)} cards and has dealt {len(self.__dealt)} cards."

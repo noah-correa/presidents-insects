@@ -1,3 +1,10 @@
+'''
+File:           Server.py
+Author:         Noah Correa
+Date:           09/9/21
+Description:    Runs a Presidents and Insects server
+'''
+
 import sys
 import os
 import time
@@ -15,25 +22,15 @@ from src.player import Player
 from src.status import Status
 
 
-PLAYERS = {}                        # holds active players in format { <username>: [<socket>, <address>, <Player>], ...}
+PLAYERS: dict = {}                  # holds active players in format { <username>: [<socket>, <address>], ...}
+CONNECTED: dict = {}                # players connected (after game has started)
 T_LOCK = threading.Condition()      # thread lock
-GAME = None
+GAME: Game = None
 SHUTDOWN = False
+STARTGAME = False
+SOCKET: socket = None
+BUFSIZE = 1024*2
 # pygame.init()
-
-
-class CmdThread(threading.Thread):
-    def __init__(self, input_cbk = None, name='cl-input-thread'):
-        self.input_cbk = input_cbk
-        super(CmdThread, self).__init__(name=name)
-        self.daemon = True
-        self.start()
-
-    def run(self):
-        while True:
-            self.input_cbk(input()) #waits to get input + Return
-
-
 
 def getIP():
     return json.loads(urllib.request.urlopen('https://jsonip.com/').read())['ip']
@@ -42,6 +39,8 @@ def start_server():
     global PLAYERS
     global T_LOCK
     global GAME
+    global STARTGAME
+    global SOCKET
 
     if len(sys.argv) == 1:
         ADDR = 'localhost'
@@ -69,7 +68,7 @@ def start_server():
         try:
             # Accept a client and create a thread for it
             playerSocket, playerAddress = SOCKET.accept()
-            print(f"{playerAddress} connected")
+            # print(f"{playerAddress} connected")
             threading.Thread(target=playerThread, args= (playerSocket, playerAddress)).start()
 
         except BlockingIOError:
@@ -84,13 +83,17 @@ def start_server():
                 if c == 'q':
                     quit_server()
                 elif c == 's':
-                    if 5 <= len(list(PLAYERS.keys())) <= 7:
-                        start_game()
+                    # Check enough players
+                    if 5 <= len(list(PLAYERS.keys())) <= 7 and not STARTGAME:
+                        with T_LOCK:
+                            print("Starting game")
+                            GAME.startMP()
+                            # print(GAME)
+                            STARTGAME = True
+                            T_LOCK.notify()
                     else:
                         print("Cannot start game! Must have 5-7 players")
             time.sleep(0.1)
-
-
     SOCKET.close()
 
 
@@ -100,24 +103,30 @@ def playerThread(playerSocket: socket, playerAddress):
     global T_LOCK
     global SHUTDOWN
     global GAME
+    global STARTGAME
+    global CONNECTED
 
     # playerSocket.setblocking(False)
     playerName = None
     
+    # playerSocket.settimeout(1)
     # Handle player commands
     while True:
+        if SHUTDOWN:
+            return
         # Handle incoming client request
         with T_LOCK:
-            if SHUTDOWN:
-                return
             try:
                 # Receive command from client
                 data = recvJSON(playerSocket)
+                # print(f"receiving {data.get('status')}")
+
             except:
                 T_LOCK.notify()
                 continue
-
-            # print(f"RECEIVED: {data}")
+            
+            if STARTGAME:
+                print(f"RECEIVED: {data}")
             code = data.get('status')
             response = {}
             # Handle client responses
@@ -126,24 +135,44 @@ def playerThread(playerSocket: socket, playerAddress):
             if code == Status.CONNECT:
                 playerName = data.get('name')
                 response = playerConnect(playerSocket, playerAddress, playerName)
+                CONNECTED[playerName] = 0
             
             # Check if player disconnected from server
             elif code == Status.DISCONNECT:
                 GAME.delPlayer(playerName)
                 PLAYERS.pop(data['name'])
+                CONNECTED[playerName] = -1
                 print(f"'{playerName}' disconnected")
-                print(f"{len(PLAYERS)} total players {list(PLAYERS.keys())}")
+                print(f"PLAYER LIST ({len(PLAYERS)}): {list(PLAYERS.keys())}")
                 return
 
             # Client is connected, requesting lobby list
             elif code == Status.LOBBY:
-                response = {'status': Status.LOBBY, 'playerlist': list(PLAYERS.keys())}
+                # print(STARTGAME)
+                if not STARTGAME:
+                    response = {'status': Status.LOBBY, 'playerlist': list(PLAYERS.keys())}
+                else:
+                    response = {'status': Status.LOBBY, 'playerlist': list(PLAYERS.keys()), 'player': GAME.getPlayer(playerName).__dict__()}
+                    # print(f"send '{playerName}': {response}")
+                    # print(f"sending size {sys.getsizeof(response)}")
 
-
-
+            elif code == Status.GAME:
+                CONNECTED[playerName] = 1
+                if not SHUTDOWN:
+                    print(f"'{playerName}' has {sum(CONNECTED.values())}/{len(PLAYERS.keys())} connected")
+                    if sum(CONNECTED.values()) == len(PLAYERS.keys()):
+                        # All players connected
+                        response = {'status': Status.GAME, 'game': GAME.__dict__()}
+                    else:
+                        response = {'status': Status.GAME, 'game': {}}
+                else:
+                    response = {'status': Status.SHUTDOWN}
 
             # Send response message back to client
+            if STARTGAME: 
+                print(f"sending {playerName}:\n{response}")
             sendJSON(playerSocket, response)
+            # time.sleep(1)
             T_LOCK.notify()
 
 
@@ -163,27 +192,43 @@ def playerConnect(sock, addr, name):
         if not validName:
             json_status = {'status': Status.INVALID, 'errmsg': f"Player '{name}' is invalid (must be alphanumeric only)"}
         else:
-            playerObj = Player(name)
+            # playerObj = Player(name)
             # json_status = {'status': Status.VALID, 'player': playerObj.__dict__()}
             json_status = {'status': Status.VALID, 'name': name}
             # Add player to active players
-            PLAYERS[name] = [sock, addr, playerObj]
+            PLAYERS[name] = [sock, addr]
             print(f"  -> {name} logged into server from {addr[0]}:{addr[1]}")
-            print(f"{len(PLAYERS)} total players {list(PLAYERS.keys())}")
+            print(f"PLAYER LIST ({len(PLAYERS)}): {list(PLAYERS.keys())}")
 
     return json_status
-      
-def updateLobby():
-    global PLAYERS
-    names = list(PLAYERS.keys())
-    for sock,_,_ in PLAYERS.values():
-        pass
-    return
 
-# Starts the game
-def start_game():
-    print("Starting game")
-    pass
+
+# # Starts the game
+# def start_game():
+#     global GAME
+#     global PLAYERS
+#     global STARTGAME
+#     global T_LOCK
+#     global SHUTDOWN
+
+#     print("Starting game")
+#     with T_LOCK:
+#         GAME.startMP()
+#         time.sleep(4.5)
+#         STARTGAME = True
+#         T_LOCK.notify()
+    # with T_LOCK:
+    #     for player in GAME.players.values():
+    #         json_data = {'status': Status.PLAYER, 'player': player.__dict__()}
+    #         print(f"Sent player '{player.name}':\n{json_data}")
+    #         sendPlayerJSON(player.name, json_data)
+    #     T_LOCK.notify()
+    # while True:
+    #     if SHUTDOWN:
+    #         quit_server()
+    #     with T_LOCK:
+    #         T_LOCK.notify()
+    
 
 
 # Quits the server
@@ -191,22 +236,59 @@ def quit_server():
     global PLAYERS
     global GAME
     global SHUTDOWN
-    json = {'status': Status.SHUTDOWN}
-    for _, (sock, _, _) in PLAYERS.items():
-        sendJSON(sock, json)
+    global T_LOCK
+    global SOCKET
+    if not STARTGAME:
+        with T_LOCK:
+            json = {'status': Status.SHUTDOWN}
+            for sock, _ in PLAYERS.values():
+                sendJSON(sock, json)
+            T_LOCK.notify()
     SHUTDOWN = True
+    SOCKET.close()
     sys.exit()
 
 
+# Sends information to specific player
+def sendPlayerJSON(name: str, data: dict) -> None:
+    global PLAYERS
+    global T_LOCK
+
+    with T_LOCK:
+        sock, _ = PLAYERS.get(name)
+        if sock is not None:
+            sendJSON(sock, data)
+        T_LOCK.notify()
+
+# Sends information to all players:
+def sendAllJSON(data) -> None:
+    global PLAYERS
+    global T_LOCK
+    with T_LOCK:
+        for sock, _ in PLAYERS.values():
+            sendJSON(sock, data)
+        T_LOCK.notify()
+
+
 def recvJSON(sock: socket) -> dict:
-    data = json.loads(sock.recv(1024).decode('utf-8'))
+    while True:
+        try:
+            data = json.loads(sock.recv(BUFSIZE).decode('utf-8'))
+            break
+        except:
+            continue
     return data
 
-def sendJSON(sock: socket, data) -> None:
-    # print(type(data), data)
-    json_data = json.dumps(data, indent=4)
-    # print(json_data)
-    sock.send(json_data.encode('utf-8'))
+def sendJSON(sock: socket, data: dict) -> None:
+    while True:
+        try:
+            # print(type(data), data)
+            json_data = json.dumps(data, indent=4)
+            # print(json_data)
+            sock.send(json_data.encode('utf-8'))
+            break
+        except:
+            continue
 
 
 

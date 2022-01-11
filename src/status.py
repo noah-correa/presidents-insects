@@ -1,5 +1,5 @@
 '''
-File:           Status.py
+File:           status.py
 Author:         Noah Correa
 Date:           09/9/21
 Description:    Contains the Status class which defines the codes sent between the Client and Server
@@ -16,10 +16,8 @@ class Status():
     INVALID     =   201     # Invalid move requested by client
     
     # Server requests
-    SETHAND     =   300     # Server requesting client set cards in hand
-    NEWTURN     =   301     # Server starting new turn
-    NEWROUND    =   302     # Server starting new round
-    NEWGAME     =   303     # Server starting new game
+    PLAYER      =   300     # Server requests client to set the player object
+    GAME        =   301     # Server/Client game 
 
     # Client requests
     LOBBY       =   400     # Client requesting lobby information
